@@ -1,0 +1,3208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pulse · Emergency Transit & Preemption OS</title>
+
+  
+  
+  
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    :root {
+      --bg-canvas: #F5F5F7;
+      --bg-surface: #FFFFFF;
+      --bg-subtle: #EBEBED;
+      --bg-hover: #F0F0F2;
+      
+      --card-bg: #FFFFFF;
+      --glass-panel: rgba(255, 255, 255, 0.85);
+      --glass-modal: rgba(255, 255, 255, 0.95);
+      
+      --card-border: rgba(0, 0, 0, 0.05);
+      --card-border-focus: rgba(0, 113, 227, 0.35);
+      --separator: rgba(0, 0, 0, 0.06);
+
+      --text-primary: #1D1D1F;
+      --text-secondary: #6E6E73;
+      --text-tertiary: #86868B;
+      --text-quaternary: #A1A1A6;
+
+      --accent-blue: #0071E3;
+      --accent-blue-hover: #0077ED;
+      --accent-blue-subtle: rgba(0, 113, 227, 0.08);
+      
+      --success: #34C759;
+      --success-subtle: rgba(52, 199, 89, 0.12);
+      --warning: #FF9F0A;
+      --warning-subtle: rgba(255, 159, 10, 0.12);
+      --danger: #FF3B30;
+      --danger-subtle: rgba(255, 59, 48, 0.1);
+
+      --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
+      --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+      --shadow-floating: 0 14px 36px rgba(0, 0, 0, 0.07), 0 2px 6px rgba(0, 0, 0, 0.03);
+      --shadow-modal: 0 24px 60px rgba(0, 0, 0, 0.12), 0 4px 14px rgba(0, 0, 0, 0.04);
+
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-xl: 26px;
+      --radius-full: 9999px;
+
+      --transition-pulse: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      --transition-fast: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+
+      --font-stack: -pulse-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", sans-serif;
+      --font-mono: "SF Mono", Menlo, Monaco, Consolas, "JetBrains Mono", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
+      font-family: var(--font-stack);
+      min-height: 100vh;
+      line-height: 1.45;
+      letter-spacing: -0.01em;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mono {
+      font-family: var(--font-mono);
+      font-feature-settings: "tnum" on, "lnum" on;
+    }
+
+    .nav-wrapper {
+      position: sticky;
+      top: 14px;
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+      padding: 0 24px;
+      pointer-events: none;
+    }
+
+    .nav-island {
+      pointer-events: auto;
+      width: 100%;
+      max-width: 1360px;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-full);
+      box-shadow: var(--shadow-floating);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      gap: 16px;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+
+    .brand-logo-disc {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      background: linear-gradient(180deg, #0077ED 0%, #0071E3 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFFFFF;
+      font-size: 14px;
+      box-shadow: 0 2px 8px rgba(0, 113, 227, 0.25);
+    }
+
+    .brand-pill-sub {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--accent-blue);
+      background: rgba(0, 113, 227, 0.1);
+      padding: 1px 6px;
+      border-radius: 6px;
+      letter-spacing: 0.04em;
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .segmented-control {
+      display: flex;
+      background: rgba(0, 0, 0, 0.04);
+      padding: 3px;
+      border-radius: var(--radius-full);
+      gap: 2px;
+    }
+
+    .segment-tab {
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .segment-tab:hover {
+      color: var(--text-primary);
+    }
+
+    .segment-tab.active {
+      background: #FFFFFF;
+      color: var(--text-primary);
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .nav-controls-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .spotlight-trigger {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: rgba(0, 0, 0, 0.04);
+      border-radius: var(--radius-full);
+      border: none;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .spotlight-trigger:hover {
+      background: rgba(0, 0, 0, 0.07);
+      color: var(--text-primary);
+    }
+
+    .spotlight-badge {
+      background: #FFFFFF;
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: 10px;
+      font-weight: 600;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    }
+
+    .round-action-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.04);
+      border: none;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      position: relative;
+    }
+
+    .round-action-btn:hover {
+      background: rgba(0, 0, 0, 0.08);
+      transform: scale(1.04);
+    }
+
+    .btn-accent {
+      background: var(--accent-blue);
+      color: #FFFFFF;
+      border: none;
+      border-radius: var(--radius-full);
+      padding: 7px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 8px rgba(0, 113, 227, 0.25);
+      transition: var(--transition-fast);
+    }
+
+    .btn-accent:hover {
+      background: var(--accent-blue-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0, 113, 227, 0.32);
+    }
+
+    .app-workspace {
+      max-width: 1360px;
+      width: 100%;
+      margin: 28px auto 80px;
+      padding: 24px 24px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+    }
+
+    .view-panel {
+      display: none;
+      flex-direction: column;
+      gap: 32px;
+      animation: viewSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .view-panel.active-view {
+      display: flex;
+    }
+
+    @keyframes viewSlide {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .hero-title-group h1 {
+      font-size: 38px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+
+    .hero-title-group p {
+      font-size: 16px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .metrics-clean-bar {
+      display: flex;
+      align-items: center;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-xl);
+      padding: 12px 24px;
+      box-shadow: var(--shadow-subtle);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      gap: 16px;
+    }
+
+    .metric-bar-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: var(--radius-md);
+      transition: var(--transition-fast);
+      flex: 1;
+    }
+
+    .metric-bar-item:hover {
+      background: rgba(0, 0, 0, 0.03);
+    }
+
+    .metric-icon-disc {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .metric-content {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .metric-bar-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .metric-bar-val-group {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .metric-bar-val {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .metric-bar-sub {
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .metric-bar-divider {
+      width: 1px;
+      height: 32px;
+      background: var(--card-border);
+      flex-shrink: 0;
+    }
+
+    .map-clean-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      position: relative;
+      height: 540px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .nav-island-card {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      z-index: 20;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      max-width: 460px;
+      transition: var(--transition-fast);
+    }
+
+    .nav-lead-badge {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: var(--success);
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(52, 199, 89, 0.28);
+    }
+
+    .nav-card-body {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .nav-top-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-vehicle-tag {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .live-dot-pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      display: inline-block;
+      box-shadow: 0 0 0 rgba(52, 199, 89, 0.6);
+      animation: livePulse 1.6s infinite;
+    }
+
+    @keyframes livePulse {
+      0% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.6); }
+      70% { box-shadow: 0 0 0 6px rgba(52, 199, 89, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(52, 199, 89, 0); }
+    }
+
+    .nav-street-instruction {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 450;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .nav-telemetry-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 2px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .nav-eta-badge {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(52, 199, 89, 0.12);
+      color: var(--success);
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    .nav-dist-text {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .nav-sub-speed {
+      background: rgba(0, 0, 0, 0.05);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    @keyframes radarPulse {
+      0% {
+        r: 8;
+        opacity: 0.8;
+      }
+      70% {
+        r: 24;
+        opacity: 0.12;
+      }
+      100% {
+        r: 28;
+        opacity: 0;
+      }
+    }
+
+    .dynamic-radar-pulse {
+      animation: radarPulse 1.8s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+    }
+
+    .traffic-signal-node {
+      cursor: pointer;
+    }
+
+    .traffic-signal-node:hover rect {
+      stroke: var(--accent-blue) !important;
+      stroke-width: 1.4 !important;
+    }
+
+    .sig-lens {
+      transition: fill 0.25s ease, opacity 0.25s ease, filter 0.25s ease;
+      opacity: 0.2;
+    }
+
+    .sig-lens.active-red {
+      fill: #FF3B30 !important;
+      opacity: 1 !important;
+      filter: drop-shadow(0 0 5px rgba(255, 59, 48, 0.9));
+    }
+
+    .sig-lens.active-green {
+      fill: #34C759 !important;
+      opacity: 1 !important;
+      filter: drop-shadow(0 0 7px rgba(52, 199, 89, 0.95));
+    }
+
+    .sig-lens.active-amber {
+      fill: #FF9500 !important;
+      opacity: 1 !important;
+      filter: drop-shadow(0 0 5px rgba(255, 149, 0, 0.85));
+    }
+
+    .sig-label-pill {
+      font-family: system-ui, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serifSegoe UI", sans-serif;
+      font-size: 8.5px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .traffic-green { stroke: #24A148 !important; }
+    .traffic-orange { stroke: #F4B400 !important; }
+    .traffic-red { stroke: #DB4437 !important; }
+    .traffic-crimson { stroke: #900000 !important; }
+
+    .card-action-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+
+    .card-action-dropdown {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      right: 0;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08);
+      padding: 6px;
+      min-width: 220px;
+      z-index: 1200;
+      display: none;
+      flex-direction: column;
+      gap: 2px;
+      animation: popIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .card-action-dropdown.active {
+      display: flex;
+    }
+
+    @keyframes policeStrobeLight {
+      0%, 100% { fill: #0071E3; }
+      50% { fill: #FF3B30; }
+    }
+
+    .police-strobe-lens {
+      animation: policeStrobeLight 0.5s infinite;
+    }
+
+    @keyframes fireBeaconFlash {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; filter: drop-shadow(0 0 6px rgba(255, 149, 0, 0.9)); }
+    }
+
+    .fire-beacon-pulse {
+      animation: fireBeaconFlash 0.7s infinite;
+    }
+
+    .overview-map-portal-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(240, 246, 255, 0.94));
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-sm);
+      padding: 18px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      margin-bottom: 22px;
+    }
+    .overview-map-portal-card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: rgba(0, 113, 227, 0.35);
+      transform: translateY(-2px);
+    }
+    .overview-portal-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .overview-portal-icon-disc {
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
+      background: rgba(0, 113, 227, 0.1);
+      color: var(--accent-blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .overview-portal-info h4 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .overview-portal-info p {
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+    .overview-portal-btn {
+      background: var(--accent-blue);
+      color: #fff;
+      border: none;
+      padding: 10px 18px;
+      border-radius: var(--radius-full);
+      font-weight: 600;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(0, 113, 227, 0.28);
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .overview-portal-btn:hover {
+      background: #0077ED;
+      transform: scale(1.02);
+    }
+
+    .overview-dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-top: 24px;
+    }
+    .overview-info-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .overview-info-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--divider);
+      padding-bottom: 10px;
+    }
+    .overview-info-header h4 {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .overview-info-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .overview-info-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12.5px;
+    }
+    .overview-info-row .label-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    .overview-info-row .val-tag {
+      font-size: 11.5px;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+
+    .map-toolbar-floating {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      z-index: 20;
+      display: flex;
+      gap: 8px;
+    }
+
+    .map-action-pill {
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-full);
+      padding: 7px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      font-family: inherit;
+      color: var(--text-primary);
+      box-shadow: var(--shadow-card);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: var(--transition-fast);
+    }
+
+    .map-action-pill:hover {
+      background: #FFFFFF;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-floating);
+    }
+
+    .layers-dropdown-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    .glass-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-modal);
+      padding: 6px;
+      min-width: 200px;
+      z-index: 50;
+      display: none;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .glass-dropdown-menu.visible {
+      display: flex;
+      animation: popIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .dropdown-header-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 6px 10px 4px;
+    }
+
+    .dropdown-layer-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: transparent;
+      color: var(--text-primary);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      text-align: left;
+      width: 100%;
+    }
+
+    .dropdown-layer-item:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    .dropdown-layer-item .check-icon {
+      font-size: 11px;
+      color: var(--accent-blue);
+      width: 14px;
+      display: none;
+    }
+
+    .dropdown-layer-item.active .check-icon {
+      display: inline-block;
+    }
+
+    .map-canvas-area {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      background: #F7F7F8;
+    }
+
+    .clean-map-svg {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    .clean-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .incident-clean-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 160px;
+      transition: var(--transition-fast);
+      position: relative;
+    }
+
+    .incident-clean-card:hover {
+      box-shadow: var(--shadow-floating);
+      transform: translateY(-2px);
+    }
+
+    .card-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .incident-title-box h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .incident-title-box p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .badge-subtle {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .badge-red { background: var(--danger-subtle); color: var(--danger); }
+    .badge-amber { background: var(--warning-subtle); color: #B25E00; }
+    .badge-blue { background: var(--accent-blue-subtle); color: var(--accent-blue); }
+
+    .card-bottom-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--separator);
+    }
+
+    .action-icon-menu-btn {
+      background: rgba(0, 0, 0, 0.04);
+      border: none;
+      border-radius: var(--radius-full);
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      font-family: inherit;
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: var(--transition-fast);
+    }
+
+    .action-icon-menu-btn:hover {
+      background: rgba(0, 0, 0, 0.08);
+    }
+
+    .slide-over-scrim {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 2500;
+      display: none;
+      justify-content: flex-end;
+    }
+
+    .slide-over-scrim.visible {
+      display: flex;
+    }
+
+    .slide-over-panel {
+      width: 100%;
+      max-width: 440px;
+      height: 100%;
+      background: #FFFFFF;
+      box-shadow: -10px 0 40px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow-y: auto;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+
+    .slide-over-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--separator);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      background: rgba(255, 255, 255, 0.9);
+      backdrop-filter: blur(20px);
+      z-index: 10;
+    }
+
+    .slide-over-body {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .inspector-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .inspector-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .telemetry-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--separator);
+      font-size: 13px;
+    }
+
+    .telemetry-row:last-child {
+      border-bottom: none;
+    }
+
+    .spotlight-modal-scrim {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      z-index: 3000;
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 120px;
+    }
+
+    .spotlight-modal-scrim.visible {
+      display: flex;
+    }
+
+    .spotlight-card {
+      width: 100%;
+      max-width: 580px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(32px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-modal);
+      overflow: hidden;
+      animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.96); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .spotlight-input-row {
+      display: flex;
+      align-items: center;
+      padding: 16px 20px;
+      gap: 12px;
+      border-bottom: 1px solid var(--separator);
+    }
+
+    .spotlight-input-row input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 16px;
+      font-family: inherit;
+      color: var(--text-primary);
+    }
+
+    .spotlight-list {
+      list-style: none;
+      max-height: 340px;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .spotlight-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text-primary);
+      transition: var(--transition-fast);
+    }
+
+    .spotlight-item:hover {
+      background: var(--accent-blue);
+      color: #FFFFFF;
+    }
+
+    .spotlight-item:hover .item-shortcut {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .item-shortcut {
+      font-size: 11px;
+      color: var(--text-tertiary);
+    }
+
+    .glass-popover {
+      position: fixed;
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.06);
+      padding: 6px;
+      min-width: 220px;
+      z-index: 9999;
+      display: none;
+      animation: popIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .glass-popover.visible {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .popover-header-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 6px 10px 4px;
+    }
+
+    .popover-item {
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: none;
+      background: transparent;
+      text-align: left;
+      font-family: inherit;
+      transition: var(--transition-fast);
+    }
+
+    .popover-item:hover {
+      background: var(--accent-blue);
+      color: #FFFFFF;
+    }
+
+    .popover-item.danger-item:hover {
+      background: var(--danger);
+      color: #FFFFFF;
+    }
+
+    .toast-container {
+      position: fixed;
+      top: 84px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3500;
+      pointer-events: none;
+    }
+
+    .toast-pill {
+      pointer-events: auto;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(28px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-full);
+      box-shadow: var(--shadow-floating);
+      padding: 8px 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      animation: toastDrop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes toastDrop {
+      from { transform: translateY(-10px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @media (max-width: 1024px) {
+      .metrics-clean-bar {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+      .metric-bar-divider {
+        display: none;
+      }
+      .clean-grid-3 {
+        grid-template-columns: 1fr;
+      }
+      .segmented-control {
+        overflow-x: auto;
+      }
+      .nav-island-card {
+        max-width: calc(100% - 32px);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .nav-wrapper {
+        padding: 0 12px;
+      }
+      .spotlight-trigger {
+        display: none;
+      }
+      .hero-title-group h1 {
+        font-size: 28px;
+      }
+      .metrics-clean-bar {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="nav-wrapper">
+    <header class="nav-island">
+      <a href="#" class="nav-brand">
+        <div class="brand-logo-disc"><i class="fa-solid fa-wave-square"></i></div>
+        <span class="brand-title">Pulse</span>
+        <span class="brand-pill-sub">OS</span>
+      </a>
+
+      <nav class="segmented-control">
+        <button class="segment-tab active" data-tab="overview" onclick="navToTab('overview', this)">Overview</button>
+        <button class="segment-tab" data-tab="map" onclick="navToTab('map', this)">Map</button>
+        <button class="segment-tab" data-tab="operations" onclick="navToTab('operations', this)">Operations</button>
+        <button class="segment-tab" data-tab="vehicles" onclick="navToTab('vehicles', this)">Vehicles</button>
+        <button class="segment-tab" data-tab="signals" onclick="navToTab('signals', this)">Signals</button>
+        <button class="segment-tab" data-tab="analytics" onclick="navToTab('analytics', this)">Analytics</button>
+      </nav>
+
+      <div class="nav-controls-right">
+        
+        <button class="spotlight-trigger" onclick="openSpotlight()">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <span>Search</span>
+          <span class="spotlight-badge">⌘K</span>
+        </button>
+
+        <button class="round-action-btn" title="Quick Options" onclick="togglePopover(event, 'mainQuickPopover')">
+          <i class="fa-solid fa-ellipsis"></i>
+        </button>
+
+        <button class="btn-accent" onclick="openDispatchModal()">
+          <i class="fa-solid fa-plus"></i> Dispatch
+        </button>
+      </div>
+    </header>
+  </div>
+
+  <main class="app-workspace">
+
+    <div class="view-panel active-view" id="view-overview">
+      
+      <div class="hero-header">
+        <div class="hero-title-group">
+          <h1>City Operations</h1>
+          <p>Real-time emergency preemption and traffic flow across 14 municipal sectors.</p>
+        </div>
+      </div>
+
+      <div class="metrics-clean-bar">
+        <div class="metric-bar-item" onclick="openInspector('Active Emergencies', '24 active incidents citywide. 3 priority green wave escorts currently underway.')">
+          <div class="metric-icon-disc" style="background: rgba(255, 59, 48, 0.1); color: var(--danger);">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <div class="metric-content">
+            <span class="metric-bar-label">Active Emergencies</span>
+            <div class="metric-bar-val-group">
+              <span class="metric-bar-val mono">24</span>
+              <span class="metric-bar-sub" style="color: var(--danger);">3 Priority</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="metric-bar-divider"></div>
+
+        <div class="metric-bar-item" onclick="openInspector('Response Time Metric', '4.2 minute average response time across all dispatch sectors.')">
+          <div class="metric-icon-disc" style="background: rgba(52, 199, 89, 0.1); color: var(--success);">
+            <i class="fa-solid fa-stopwatch"></i>
+          </div>
+          <div class="metric-content">
+            <span class="metric-bar-label">Avg Response</span>
+            <div class="metric-bar-val-group">
+              <span class="metric-bar-val mono">4.2 <span style="font-size: 13px; font-weight: 500; color: var(--text-secondary);">min</span></span>
+              <span class="metric-bar-sub" style="color: var(--success);">-18%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="metric-bar-divider"></div>
+
+        <div class="metric-bar-item" onclick="openInspector('Fleet Deployment', '78 total fleet assets: 12 deployed, 66 staged at regional depots.')">
+          <div class="metric-icon-disc" style="background: rgba(0, 113, 227, 0.1); color: var(--accent-blue);">
+            <i class="fa-solid fa-truck-medical"></i>
+          </div>
+          <div class="metric-content">
+            <span class="metric-bar-label">Active Fleet</span>
+            <div class="metric-bar-val-group">
+              <span class="metric-bar-val mono">12 <span style="font-size: 13px; font-weight: 500; color: var(--text-secondary);">/ 78</span></span>
+              <span class="metric-bar-sub" style="color: var(--text-secondary);">66 Ready</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="metric-bar-divider"></div>
+
+        <div class="metric-bar-item" onclick="openInspector('Preemption Efficiency', '96.4% success rate across 142 signal intersections.')">
+          <div class="metric-icon-disc" style="background: rgba(52, 199, 89, 0.1); color: var(--success);">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div class="metric-content">
+            <span class="metric-bar-label">Corridor Preemption</span>
+            <div class="metric-bar-val-group">
+              <span class="metric-bar-val mono">96%</span>
+              <span class="metric-bar-sub" style="color: var(--success);">Active</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="overview-map-portal-card" onclick="navToTab('map', null)">
+        <div class="overview-portal-left">
+          <div class="overview-portal-icon-disc">
+            <i class="fa-solid fa-map-location-dot"></i>
+          </div>
+          <div class="overview-portal-info">
+            <h4>
+              <span>Live Traffic & Corridor Map</span>
+              <span class="live-dot-pulse"></span>
+              <span style="font-size: 11px; font-weight: 600; color: var(--success); text-transform: uppercase; letter-spacing: 0.05em;">Live GIS Simulation</span>
+            </h4>
+            <p>
+              4 emergency units in active transit across Metropolitan Peninsula · 6 automated preemption signals · Live real-time traffic flow telemetrys
+            </p>
+          </div>
+        </div>
+        <button class="overview-portal-btn" onclick="navToTab('map', null); event.stopPropagation();">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Map
+        </button>
+      </div>
+
+      <div>
+        <div class="hero-header" style="margin-bottom: 14px;">
+          <div>
+            <h3 style="font-size: 18px; font-weight: 600;">Active Emergency Incidents</h3>
+          </div>
+          <button class="action-icon-menu-btn" onclick="navToTab('operations', null)">
+            View All (3) <i class="fa-solid fa-chevron-right" style="font-size: 9px;"></i>
+          </button>
+        </div>
+
+        <div class="clean-grid-3">
+          
+          <div class="incident-clean-card">
+            <div class="card-top-row">
+              <div class="incident-title-box">
+                <h3>Cardiac Emergency</h3>
+                <p>BKC Connector & Western Express Highway</p>
+              </div>
+              <span class="badge-subtle badge-red">Critical Priority</span>
+            </div>
+            <div class="card-bottom-row">
+              <span style="font-size: 13px; color: var(--text-secondary);">Assigned: <strong>Ambulance A-12</strong></span>
+              <div class="card-action-wrapper">
+                <button class="action-icon-menu-btn" onclick="toggleIncidentCardMenu(event, 'cardActionDropdown1')">
+                  <span>Actions</span> <i class="fa-solid fa-chevron-down" style="font-size: 9px;"></i>
+                </button>
+                <div class="card-action-dropdown" id="cardActionDropdown1">
+                  <div class="popover-header-title">108 Ambulance A-12</div>
+                  <button class="popover-item" onclick="selectMissionByName('ambulance', event)">
+                    <i class="fa-solid fa-crosshairs" style="color: var(--accent-blue); width: 16px;"></i> Track Convoy on Map
+                  </button>
+                  <button class="popover-item" onclick="triggerCardAction('Lock Green Wave', 'Ambulance A-12', 'ambulance', event)">
+                    <i class="fa-solid fa-route" style="color: var(--success); width: 16px;"></i> Lock Green Wave
+                  </button>
+                  <button class="popover-item" onclick="triggerCardAction('Add Police Escort', 'Ambulance A-12', 'ambulance', event)">
+                    <i class="fa-solid fa-shield" style="color: var(--accent-blue); width: 16px;"></i> Add Police Escort
+                  </button>
+                  <button class="popover-item danger-item" onclick="triggerCardAction('Broadcast Advisory', 'Ambulance A-12', 'ambulance', event)">
+                    <i class="fa-solid fa-bullhorn" style="color: var(--danger); width: 16px;"></i> Broadcast Advisory
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="incident-clean-card">
+            <div class="card-top-row">
+              <div class="incident-title-box">
+                <h3>Commercial Docks Fire</h3>
+                <p>Mazagaon Industrial Sector 4</p>
+              </div>
+              <span class="badge-subtle badge-amber">High Priority</span>
+            </div>
+            <div class="card-bottom-row">
+              <span style="font-size: 13px; color: var(--text-secondary);">Assigned: <strong>Fire Unit F-03</strong></span>
+              <div class="card-action-wrapper">
+                <button class="action-icon-menu-btn" onclick="toggleIncidentCardMenu(event, 'cardActionDropdown2')">
+                  <span>Actions</span> <i class="fa-solid fa-chevron-down" style="font-size: 9px;"></i>
+                </button>
+                <div class="card-action-dropdown" id="cardActionDropdown2">
+                  <div class="popover-header-title">Fire Tender F-03</div>
+                  <button class="popover-item" onclick="selectMissionByName('fire', event)">
+                    <i class="fa-solid fa-crosshairs" style="color: var(--accent-blue); width: 16px;"></i> Track Fire Tender on Map
+                  </button>
+                  <button class="popover-item" onclick="triggerCardAction('Lock Green Wave', 'Fire Unit F-03', 'fire', event)">
+                    <i class="fa-solid fa-route" style="color: var(--success); width: 16px;"></i> Lock Green Wave
+                  </button>
+                  <button class="popover-item" onclick="triggerCardAction('Request Second Tender', 'Fire Unit F-03', 'fire', event)">
+                    <i class="fa-solid fa-truck" style="color: var(--warning); width: 16px;"></i> Request Backup Tender
+                  </button>
+                  <button class="popover-item danger-item" onclick="triggerCardAction('Broadcast Advisory', 'Fire Unit F-03', 'fire', event)">
+                    <i class="fa-solid fa-bullhorn" style="color: var(--danger); width: 16px;"></i> Evacuation Advisory
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="incident-clean-card">
+            <div class="card-top-row">
+              <div class="incident-title-box">
+                <h3>Coastal Sea Link Escort</h3>
+                <p>Bandra Toll -> Nariman Point Corridor</p>
+              </div>
+              <span class="badge-subtle badge-blue">Escort Protocol</span>
+            </div>
+            <div class="card-bottom-row">
+              <span style="font-size: 13px; color: var(--text-secondary);">Assigned: <strong>Police P-08</strong></span>
+              <div class="card-action-wrapper">
+                <button class="action-icon-menu-btn" onclick="toggleIncidentCardMenu(event, 'cardActionDropdown3')">
+                  <span>Actions</span> <i class="fa-solid fa-chevron-down" style="font-size: 9px;"></i>
+                </button>
+                <div class="card-action-dropdown" id="cardActionDropdown3">
+                  <div class="popover-header-title">Police Interceptor P-08</div>
+                  <button class="popover-item" onclick="selectMissionByName('police', event)">
+                    <i class="fa-solid fa-crosshairs" style="color: var(--accent-blue); width: 16px;"></i> Track Police Interceptor
+                  </button>
+                  <button class="popover-item" onclick="triggerCardAction('Clear Sea Link Corridor', 'Police P-08', 'police', event)">
+                    <i class="fa-solid fa-shield-halved" style="color: var(--accent-blue); width: 16px;"></i> Clear Sea Link Toll
+                  </button>
+                  <button class="popover-item" onclick="triggerCardAction('Sync Traffic Lights', 'Police P-08', 'police', event)">
+                    <i class="fa-solid fa-traffic-light" style="color: var(--success); width: 16px;"></i> Hold Coastal Signals
+                  </button>
+                  <button class="popover-item danger-item" onclick="triggerCardAction('Broadcast Advisory', 'Police P-08', 'police', event)">
+                    <i class="fa-solid fa-bullhorn" style="color: var(--danger); width: 16px;"></i> Marine Drive Alert
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="overview-dashboard-grid">
+        
+        <div class="overview-info-card">
+          <div class="overview-info-header">
+            <h4><i class="fa-solid fa-truck-medical" style="color: var(--accent-blue);"></i> Fleet Readiness</h4>
+            <span class="badge-subtle badge-green">94% Ready</span>
+          </div>
+          <div class="overview-info-list">
+            <div class="overview-info-row">
+              <span class="label-group"><i class="fa-solid fa-ambulance" style="color: var(--danger); width: 14px;"></i> 108 Ambulances</span>
+              <span class="val-tag" style="background: rgba(255,59,48,0.1); color: var(--danger);">12 Active · 24 Standby</span>
+            </div>
+            <div class="overview-info-row">
+              <span class="label-group"><i class="fa-solid fa-car-side" style="color: var(--accent-blue); width: 14px;"></i> Police Interceptors</span>
+              <span class="val-tag" style="background: rgba(0,113,227,0.1); color: var(--accent-blue);">8 Active · 16 Patrol</span>
+            </div>
+            <div class="overview-info-row">
+              <span class="label-group"><i class="fa-solid fa-fire-extinguisher" style="color: #D32F2F; width: 14px;"></i> Fire Tenders</span>
+              <span class="val-tag" style="background: rgba(211,47,47,0.1); color: #D32F2F;">4 Active · 12 Stationed</span>
+            </div>
+            <div class="overview-info-row">
+              <span class="label-group"><i class="fa-solid fa-motorcycle" style="color: var(--success); width: 14px;"></i> 108 Bike Medics</span>
+              <span class="val-tag" style="background: rgba(52,199,89,0.1); color: var(--success);">6 Active · 10 Standby</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="overview-info-card">
+          <div class="overview-info-header">
+            <h4><i class="fa-solid fa-road" style="color: var(--warning);"></i> Corridor Flow Status</h4>
+            <span class="badge-subtle badge-blue">traffic Live</span>
+          </div>
+          <div class="overview-info-list">
+            <div class="overview-info-row">
+              <span class="label-group"><i class="fa-solid fa-bridge" style="color: var(--accent-blue); width: 14px;"></i> Bandra-Worli Sea Link</span>
+              <span class="val-tag" style="background: rgba(52,199,89,0.1); color: var(--success);">88 km/h · Free Flow</span>
+            </div>
+            <div class="overview-info-row">
+              <span class="label-group"><i class="fa-solid fa-arrows-split-up-and-left" style="color: var(--warning); width: 14px;"></i> Western Express (WEH)</span>
+              <span class="val-tag" style="background: rgba(255,149,0,0.1); color: var(--warning);">64 km/h · Moderate</span>
+            </div>
+            <div class="overview-info-row">
+              <span class="label-group"><i class="fa-solid fa-triangle-exclamation" style="color: var(--danger); width: 14px;"></i> Mahim Causeway</span>
+              <span class="val-tag" style="background: rgba(255,59,48,0.1); color: var(--danger);">28 km/h · Chokepoint</span>
+            </div>
+            <div class="overview-info-row">
+              <span class="label-group"><i class="fa-solid fa-water" style="color: var(--accent-blue); width: 14px;"></i> Marine Drive Crescent</span>
+              <span class="val-tag" style="background: rgba(52,199,89,0.1); color: var(--success);">76 km/h · Green Wave</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="overview-info-card">
+          <div class="overview-info-header">
+            <h4><i class="fa-solid fa-clock-rotate-left" style="color: var(--text-secondary);"></i> Recent Activity</h4>
+            <span class="badge-subtle badge-grey">Live Sync</span>
+          </div>
+          <div class="overview-info-list">
+            <div class="overview-info-row">
+              <span class="label-group"><i class="fa-solid fa-signal" style="color: var(--success); width: 14px;"></i> Green Wave Preemption</span>
+              <span style="font-size: 11px; color: var(--text-secondary);">1 min ago · Sig #102</span>
+            </div>
+            <div class="overview-info-row">
+              <span class="label-group"><i class="fa-solid fa-shield-halved" style="color: var(--accent-blue); width: 14px;"></i> Sea Link Toll Override</span>
+              <span style="font-size: 11px; color: var(--text-secondary);">4 mins ago · P-08</span>
+            </div>
+            <div class="overview-info-row">
+              <span class="label-group"><i class="fa-solid fa-truck-droplet" style="color: #D32F2F; width: 14px;"></i> Water Cannon Staging</span>
+              <span style="font-size: 11px; color: var(--text-secondary);">7 mins ago · Mazagaon</span>
+            </div>
+            <div class="overview-info-row">
+              <span class="label-group"><i class="fa-solid fa-hospital" style="color: var(--success); width: 14px;"></i> Patient Handover Ready</span>
+              <span style="font-size: 11px; color: var(--text-secondary);">9 mins ago · KEM Trauma</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="view-panel" id="view-map">
+      <div class="hero-header">
+        <div class="hero-title-group">
+          <h1>Map</h1>
+          <p>Live real-time traffic flow telemetrys, arterial corridor preemption, and autonomous emergency fleet telemetry.</p>
+        </div>
+        <div class="hero-actions">
+          <button class="btn-accent" onclick="showToast('Cascade Active', 'All 14 corridor signals preempted.')">
+            Engage Cascade
+          </button>
+        </div>
+      </div>
+
+      <div class="map-clean-card" style="height: 760px;">
+        
+        <div class="nav-island-card" id="mapNavCard">
+          <div class="nav-lead-badge" id="navLeadIcon">
+            <i class="fa-solid fa-truck-medical"></i>
+          </div>
+          <div class="nav-card-body">
+            <div class="nav-top-meta">
+              <span class="nav-vehicle-tag" id="dynamicVehicleTitle">
+                <span class="live-dot-pulse"></span> 108 Ambulance A-12 · Priority Mission
+              </span>
+              <span class="nav-sub-speed mono" id="dynamicSpeed">84 km/h</span>
+              <span class="nav-sub-speed" id="activeMissionBadge" style="background: rgba(0,113,227,0.1); color: var(--accent-blue);">Mission 1 of 8</span>
+            </div>
+            <div class="nav-street-instruction" id="dynamicStreetInstruction">
+              Western Express Highway -> Bandra -> Mahim -> KEM Hospital (Parel)
+            </div>
+            <div class="nav-telemetry-row">
+              <span class="nav-eta-badge mono" id="dynamicEtaBadge">
+                <i class="fa-regular fa-clock" style="font-size: 10px; margin-right: 4px;"></i>ETA: <strong id="dynamicCountdownText" style="margin-left: 2px;">2:00</strong>
+              </span>
+              <span class="nav-dot-sep">·</span>
+              <span class="nav-dist-text mono" id="dynamicDistanceText">2.8 km to Destination</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="map-toolbar-floating">
+          <button class="map-action-pill" id="btnRestartSim" onclick="restartCurrentMission()" title="Replay current mission">
+            <i class="fa-solid fa-arrow-rotate-left"></i> <span>Replay</span>
+          </button>
+          <button class="map-action-pill" id="btnSimSpeed" onclick="toggleSimSpeed()" title="Toggle simulation speed">
+            <i class="fa-solid fa-forward"></i> <span id="simSpeedLabel">1x Realtime</span>
+          </button>
+
+          <div class="layers-dropdown-container">
+            <button class="map-action-pill" id="layersTriggerBtn" onclick="toggleLayersMenu(event)">
+              <i class="fa-solid fa-layer-group"></i> <span>Layers</span> <i class="fa-solid fa-chevron-down" style="font-size: 9px; opacity: 0.6;"></i>
+            </button>
+            <div class="glass-dropdown-menu" id="layersDropdownMenu" onclick="event.stopPropagation()">
+              <div class="dropdown-header-label">Map Layers</div>
+              <button class="dropdown-layer-item active" id="layerItemHeatmap" onclick="toggleMapLayer('heatmap')">
+                <i class="fa-solid fa-check check-icon"></i>
+                <span>Live Traffic Flow</span>
+              </button>
+              <button class="dropdown-layer-item active" id="layerItemSignals" onclick="toggleMapLayer('signals')">
+                <i class="fa-solid fa-check check-icon"></i>
+                <span>Traffic Signals (6)</span>
+              </button>
+              <button class="dropdown-layer-item active" id="layerItemRoute" onclick="toggleMapLayer('route')">
+                <i class="fa-solid fa-check check-icon"></i>
+                <span>Active Preemption Corridor</span>
+              </button>
+            </div>
+          </div>
+
+          <button class="map-action-pill" onclick="openInspector('Fleet Telemetry', 'Active Units: 4 emergency vehicles on separate routes across Metropolitan Peninsula · Real-time traffic flow.')">
+            <i class="fa-solid fa-circle-info"></i> <span>Telemetry</span>
+          </button>
+        </div>
+
+        <div class="map-canvas-area">
+          <svg class="clean-map-svg" viewBox="0 0 740 960" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              
+              <path id="geom_weh_parel" d="M 330,28 C 328,60 325,95 322,135 C 319,170 315,205 308,240 C 300,268 290,292 280,315 C 278,340 278,365 278,390 C 278,415 280,438 282,458 C 290,462 305,468 318,472" />
+              
+              <path id="geom_sealink_nariman" d="M 280,315 C 255,318 228,328 205,345 C 182,362 165,382 155,408 C 148,432 150,458 162,478 C 170,490 180,498 188,502 C 182,525 178,552 175,578 C 172,605 168,632 162,658 C 156,682 150,705 148,728 C 148,752 152,775 162,796 C 170,812 182,826 195,838" />
+              
+              <path id="geom_eastern_mazagaon" d="M 595,22 C 568,58 540,95 512,130 C 488,162 465,192 445,220 C 425,248 408,275 392,302 C 378,328 365,354 352,380 C 355,408 355,435 352,460 C 350,485 345,510 338,535 C 330,560 320,585 310,610" />
+              
+              <path id="geom_bandra_juhu" d="M 280,315 C 265,282 250,248 238,215 C 226,182 215,150 205,120 C 198,100 193,80 192,62" />
+              
+              <path id="geom_weh_lilavati" d="M 322,135 C 319,170 315,205 308,240 C 300,268 290,292 280,315 C 265,315 248,312 232,305" />
+              
+              <path id="geom_sealink_colaba" d="M 188,502 C 182,525 178,552 175,578 C 172,605 168,632 162,658 C 156,682 150,705 148,728 C 148,752 152,775 162,796 C 170,812 182,826 195,838 C 200,858 200,880 195,902 C 190,922 182,938 175,950" />
+              
+              <path id="geom_wadala_hinduja" d="M 352,460 C 338,460 322,458 310,455 C 295,452 282,458 278,458 C 272,445 268,432 265,420" />
+              
+              <path id="geom_eastern_central" d="M 352,380 C 355,408 355,435 352,460 C 350,485 345,510 338,535 C 330,560 320,585 310,610 C 300,632 290,654 280,675 C 268,692 258,708 250,724" />
+              
+              <path id="geom_transit_sclr" d="M 322,135 C 348,148 375,162 402,178 C 428,192 452,208 475,222 C 498,235 520,246 542,255 C 562,262 582,266 602,268" />
+              <path id="geom_transit_bkc" d="M 280,315 C 305,320 332,326 358,334 C 380,340 402,348 422,358" />
+              <path id="geom_transit_sbapat" d="M 278,390 C 268,415 258,442 252,470 C 246,496 242,522 240,548 C 238,572 238,598 240,622" />
+            </defs>
+
+            <rect x="0" y="0" width="740" height="960" fill="#C8E3F4"/>
+            <text x="42" y="425" font-family="system-ui,sans-serif" font-size="15" font-weight="800" fill="#7FB3D3" letter-spacing="0.06em">ARABIAN</text>
+            <text x="55" y="445" font-family="system-ui,sans-serif" font-size="15" font-weight="800" fill="#7FB3D3" letter-spacing="0.06em">SEA</text>
+            <text x="462" y="555" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#7FB3D3" letter-spacing="0.05em">HARBOUR</text>
+            <text x="472" y="572" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#7FB3D3" letter-spacing="0.05em">BAY</text>
+
+            <path d="
+              M 192,0 L 195,22
+              C 196,40 198,58 200,78
+              C 202,98 206,118 210,138
+              C 214,155 218,172 222,188
+              C 226,204 230,220 232,236
+              C 222,252 208,265 196,278
+              C 185,290 178,302 174,316
+              C 174,328 180,338 190,345
+              C 200,350 212,354 224,358
+              C 228,370 228,385 225,398
+              C 220,415 210,430 200,445
+              C 188,460 175,472 165,485
+              C 155,498 148,512 148,528
+              C 148,545 152,560 155,575
+              C 158,590 160,605 158,620
+              C 155,638 148,655 140,672
+              C 130,690 118,708 115,726
+              C 112,742 115,758 122,772
+              C 132,788 145,800 158,812
+              C 165,820 170,830 172,840
+              C 174,855 172,872 168,888
+              C 163,905 155,920 148,935
+              C 150,950 158,958 168,955
+              C 180,950 192,938 200,922
+              C 210,905 216,888 220,870
+              C 224,852 226,832 228,812
+              C 232,795 238,778 246,762
+              C 255,745 265,728 272,710
+              C 282,690 290,668 296,645
+              C 305,620 312,593 318,565
+              C 326,536 334,506 342,476
+              C 352,445 365,415 378,388
+              C 392,360 408,335 422,308
+              C 432,285 438,260 440,235
+              C 438,218 432,202 430,186
+              C 430,168 435,150 442,134
+              C 452,115 466,100 482,88
+              C 496,76 512,68 530,62
+              C 548,56 568,52 586,48
+              C 604,44 620,40 636,35
+              C 650,30 660,22 662,10
+              L 662,0 Z
+            " fill="#E8DFC8" stroke="#C5B89A" stroke-width="1.5"/>
+
+            <path d="M 510,262 C 530,270 552,278 572,284 C 594,290 615,294 634,295 C 650,296 662,295 670,290 C 680,285 682,276 678,266 C 674,254 662,244 648,236 C 632,226 614,220 600,216 C 585,212 568,210 555,212 C 542,214 530,220 520,228 C 510,236 505,246 507,256 C 508,260 509,261 510,262 Z" fill="#D8CCAC" stroke="#C5B89A" stroke-width="1"/>
+
+            <path d="M 440,235 C 445,220 450,205 455,190 C 458,178 460,165 460,150 C 460,138 458,126 455,115 C 452,102 448,90 444,80 C 440,70 436,60 432,50 C 428,38 424,26 422,14 C 422,8 424,2 426,0 L 662,0 L 662,10 C 660,22 650,30 636,35 C 620,40 604,44 586,48 C 568,52 548,56 530,62 C 512,68 496,76 482,88 C 466,100 452,115 442,134 C 435,150 430,168 430,186 C 432,202 438,218 440,235 Z" fill="#D5C9A5" stroke="#C5B89A" stroke-width="0.8"/>
+
+            <ellipse cx="272" cy="182" rx="62" ry="50" fill="#D4B896" opacity="0.48"/>
+            <ellipse cx="382" cy="208" rx="56" ry="44" fill="#D4B896" opacity="0.48"/>
+            <ellipse cx="285" cy="308" rx="54" ry="40" fill="#CB9F78" opacity="0.52"/>
+            <ellipse cx="362" cy="288" rx="50" ry="37" fill="#CB9F78" opacity="0.48"/>
+            <ellipse cx="298" cy="405" rx="52" ry="42" fill="#CB9F78" opacity="0.52"/>
+            <ellipse cx="388" cy="358" rx="54" ry="40" fill="#CB9F78" opacity="0.48"/>
+            <ellipse cx="522" cy="228" rx="58" ry="44" fill="#D4B896" opacity="0.42"/>
+            <ellipse cx="458" cy="162" rx="50" ry="40" fill="#D4B896" opacity="0.42"/>
+            <ellipse cx="268" cy="495" rx="50" ry="37" fill="#C89870" opacity="0.52"/>
+            <ellipse cx="358" cy="472" rx="52" ry="40" fill="#C89870" opacity="0.48"/>
+            <ellipse cx="285" cy="598" rx="48" ry="37" fill="#C89870" opacity="0.52"/>
+            <ellipse cx="228" cy="588" rx="40" ry="30" fill="#C89870" opacity="0.48"/>
+            <ellipse cx="245" cy="688" rx="40" ry="30" fill="#C08A65" opacity="0.52"/>
+            <ellipse cx="222" cy="778" rx="37" ry="27" fill="#C08A65" opacity="0.48"/>
+            <ellipse cx="208" cy="868" rx="32" ry="24" fill="#C08A65" opacity="0.48"/>
+            
+            <ellipse cx="392" cy="422" rx="44" ry="32" fill="#B8C89A" opacity="0.42"/>
+            <ellipse cx="448" cy="342" rx="37" ry="28" fill="#B8C89A" opacity="0.38"/>
+
+            <rect x="282" y="6" width="124" height="18" rx="3" fill="#2D6A4F"/>
+            <text x="344" y="18" text-anchor="middle" font-family="system-ui,sans-serif" font-size="7.5" font-weight="800" fill="#fff">Film Studios District</text>
+
+            <ellipse cx="545" cy="40" rx="38" ry="15" fill="#9BC8E8" stroke="#7BAFD4" stroke-width="1"/>
+            <text x="545" y="43" text-anchor="middle" font-family="system-ui,sans-serif" font-size="7" font-weight="700" fill="#2B6CB0">Powai Lake</text>
+
+            <rect x="183" y="83" width="52" height="28" rx="5" fill="#EDE4D5" stroke="#D0C4AC" stroke-width="1"/>
+            <line x1="188" y1="97" x2="230" y2="97" stroke="#888" stroke-width="2" stroke-linecap="round"/>
+            <rect x="225" y="88" width="10" height="10" rx="2.5" fill="#F59E0B"/>
+            <text x="230" y="97" text-anchor="middle" font-size="6.5" fill="#fff">✈</text>
+            <text x="205" y="92" text-anchor="middle" font-family="system-ui,sans-serif" font-size="6" font-weight="700" fill="#49454F">Juhu Aerodrom</text>
+
+            <rect x="322" y="100" width="120" height="40" rx="7" fill="#EDE4D5" stroke="#D0C4AC" stroke-width="1"/>
+            <line x1="332" y1="120" x2="432" y2="120" stroke="#888" stroke-width="4" stroke-linecap="round"/>
+            <line x1="346" y1="132" x2="412" y2="108" stroke="#888" stroke-width="3" stroke-linecap="round"/>
+            <rect x="428" y="108" width="12" height="12" rx="3" fill="#F59E0B"/>
+            <text x="434" y="118" text-anchor="middle" font-size="8" fill="#fff">✈</text>
+            <text x="378" y="113" text-anchor="middle" font-family="system-ui,sans-serif" font-size="7" font-weight="700" fill="#49454F">Chhatrapati Shivaji Intl.</text>
+
+            <rect x="330" y="265" width="55" height="26" rx="7" fill="#C5E3C5" stroke="#A8D0A8" stroke-width="1"/>
+            <text x="357" y="280" text-anchor="middle" font-family="system-ui,sans-serif" font-size="6.5" font-weight="700" fill="#2D6A4F">Nature Park</text>
+
+            <rect x="215" y="415" width="44" height="32" rx="9" fill="#C5E3C5" stroke="#A8D0A8" stroke-width="1"/>
+            <text x="237" y="434" text-anchor="middle" font-family="system-ui,sans-serif" font-size="6.5" font-weight="700" fill="#2D6A4F">Shivaji Park</text>
+
+            <ellipse cx="186" cy="555" rx="23" ry="14" fill="#C5E3C5" stroke="#A8D0A8" stroke-width="1"/>
+            <text x="186" y="558" text-anchor="middle" font-family="system-ui,sans-serif" font-size="6" font-weight="700" fill="#2D6A4F">Racecourse</text>
+
+            <text x="162" y="50" font-family="system-ui,sans-serif" font-size="7.5" fill="#555" font-weight="600">Juhu Beach</text>
+            <text x="172" y="66" font-family="system-ui,sans-serif" font-size="10" fill="#333" font-weight="800">Juhu</text>
+            <text x="250" y="145" font-family="system-ui,sans-serif" font-size="9.5" fill="#333" font-weight="800">Santacruz</text>
+            <text x="485" y="95" font-family="system-ui,sans-serif" font-size="8.5" fill="#555" font-weight="700">Sakinaka</text>
+            <text x="576" y="52" font-family="system-ui,sans-serif" font-size="10" fill="#333" font-weight="800">Powai</text>
+            <text x="470" y="218" font-family="system-ui,sans-serif" font-size="10" fill="#333" font-weight="800">Kurla</text>
+            <text x="215" y="265" font-family="system-ui,sans-serif" font-size="10" fill="#333" font-weight="800">Bandra</text>
+            <text x="558" y="265" font-family="system-ui,sans-serif" font-size="8.5" fill="#555" font-weight="700">Govandi</text>
+            <text x="283" y="375" font-family="system-ui,sans-serif" font-size="9.5" fill="#333" font-weight="800">Mahim</text>
+            <text x="412" y="325" font-family="system-ui,sans-serif" font-size="9.5" fill="#333" font-weight="800">Sion</text>
+            <text x="542" y="315" font-family="system-ui,sans-serif" font-size="10" fill="#333" font-weight="800">Chembur</text>
+            <text x="638" y="328" font-family="system-ui,sans-serif" font-size="9" fill="#555" font-weight="700">Trombay</text>
+            <text x="385" y="275" font-family="system-ui,sans-serif" font-size="8.5" fill="#555" font-weight="700">BKC</text>
+            <text x="172" y="462" font-family="system-ui,sans-serif" font-size="10" fill="#333" font-weight="800">Worli</text>
+            <text x="288" y="444" font-family="system-ui,sans-serif" font-size="10" fill="#333" font-weight="800">Dadar</text>
+            <text x="368" y="444" font-family="system-ui,sans-serif" font-size="10" fill="#333" font-weight="800">Wadala</text>
+            <text x="240" y="515" font-family="system-ui,sans-serif" font-size="9.5" fill="#333" font-weight="800">Lower Parel</text>
+            <text x="152" y="545" font-family="system-ui,sans-serif" font-size="8" fill="#555" font-weight="700">Mahalaxmi</text>
+            <text x="178" y="645" font-family="system-ui,sans-serif" font-size="8.5" fill="#555" font-weight="700">Tardeo</text>
+            <text x="235" y="635" font-family="system-ui,sans-serif" font-size="8.5" fill="#555" font-weight="700">Central Terminal</text>
+            <text x="298" y="622" font-family="system-ui,sans-serif" font-size="9.5" fill="#333" font-weight="800">Byculla</text>
+            <text x="345" y="610" font-family="system-ui,sans-serif" font-size="9.5" fill="#333" font-weight="800">Mazagaon</text>
+            <text x="150" y="738" font-family="system-ui,sans-serif" font-size="9.5" fill="#333" font-weight="800">Malabar Hill</text>
+            <text x="165" y="758" font-family="system-ui,sans-serif" font-size="8" fill="#555" font-weight="600">Marine Drive</text>
+            <text x="245" y="782" font-family="system-ui,sans-serif" font-size="9.5" fill="#333" font-weight="800">Fort</text>
+            <text x="175" y="835" font-family="system-ui,sans-serif" font-size="9.5" fill="#333" font-weight="800">Nariman Point</text>
+            <text x="165" y="908" font-family="system-ui,sans-serif" font-size="10" fill="#333" font-weight="800">Colaba</text>
+
+            <g stroke="#D2C5A5" stroke-width="1.1" fill="none" opacity="0.6">
+              
+              <line x1="192" y1="90" x2="280" y2="90"/><line x1="195" y1="107" x2="280" y2="107"/>
+              <line x1="197" y1="124" x2="280" y2="124"/><line x1="199" y1="142" x2="280" y2="142"/>
+              <line x1="201" y1="160" x2="280" y2="160"/><line x1="202" y1="178" x2="280" y2="178"/>
+              <line x1="203" y1="196" x2="280" y2="196"/><line x1="203" y1="214" x2="280" y2="214"/>
+              <line x1="203" y1="232" x2="280" y2="232"/>
+              <line x1="214" y1="80" x2="214" y2="240"/><line x1="232" y1="80" x2="232" y2="240"/>
+              <line x1="250" y1="80" x2="250" y2="240"/><line x1="265" y1="80" x2="265" y2="240"/>
+              
+              <line x1="213" y1="252" x2="292" y2="252"/><line x1="210" y1="268" x2="290" y2="268"/>
+              <line x1="210" y1="285" x2="290" y2="285"/><line x1="212" y1="302" x2="285" y2="302"/>
+              <line x1="213" y1="243" x2="213" y2="318"/><line x1="230" y1="240" x2="230" y2="318"/>
+              <line x1="248" y1="238" x2="248" y2="318"/><line x1="266" y1="238" x2="266" y2="318"/>
+              
+              <line x1="338" y1="155" x2="450" y2="155"/><line x1="338" y1="173" x2="448" y2="173"/>
+              <line x1="338" y1="192" x2="447" y2="192"/><line x1="338" y1="210" x2="446" y2="210"/>
+              <line x1="338" y1="228" x2="444" y2="228"/><line x1="338" y1="246" x2="442" y2="246"/>
+              <line x1="338" y1="265" x2="440" y2="265"/>
+              <line x1="356" y1="145" x2="356" y2="272"/><line x1="375" y1="145" x2="375" y2="272"/>
+              <line x1="395" y1="142" x2="395" y2="272"/><line x1="415" y1="140" x2="415" y2="270"/>
+              <line x1="435" y1="140" x2="435" y2="268"/>
+              
+              <line x1="186" y1="332" x2="356" y2="332"/><line x1="184" y1="349" x2="354" y2="349"/>
+              <line x1="182" y1="366" x2="352" y2="366"/><line x1="180" y1="384" x2="350" y2="384"/>
+              <line x1="180" y1="400" x2="348" y2="400"/><line x1="180" y1="418" x2="346" y2="418"/>
+              <line x1="180" y1="436" x2="344" y2="436"/><line x1="180" y1="453" x2="342" y2="453"/>
+              <line x1="196" y1="325" x2="196" y2="465"/><line x1="216" y1="323" x2="216" y2="465"/>
+              <line x1="236" y1="322" x2="236" y2="465"/><line x1="256" y1="320" x2="256" y2="465"/>
+              <line x1="276" y1="320" x2="276" y2="465"/><line x1="296" y1="322" x2="296" y2="465"/>
+              <line x1="316" y1="324" x2="316" y2="465"/><line x1="336" y1="326" x2="336" y2="465"/>
+              
+              <line x1="306" y1="322" x2="510" y2="322"/><line x1="303" y1="340" x2="505" y2="340"/>
+              <line x1="300" y1="358" x2="500" y2="358"/><line x1="298" y1="376" x2="494" y2="376"/>
+              <line x1="296" y1="394" x2="488" y2="394"/><line x1="294" y1="410" x2="480" y2="410"/>
+              <line x1="356" y1="318" x2="356" y2="428"/><line x1="376" y1="316" x2="376" y2="428"/>
+              <line x1="396" y1="314" x2="396" y2="426"/><line x1="416" y1="313" x2="416" y2="424"/>
+              <line x1="436" y1="313" x2="436" y2="420"/><line x1="456" y1="314" x2="456" y2="416"/>
+              <line x1="476" y1="316" x2="476" y2="412"/>
+              
+              <line x1="178" y1="470" x2="346" y2="470"/><line x1="178" y1="488" x2="343" y2="488"/>
+              <line x1="178" y1="506" x2="340" y2="506"/><line x1="178" y1="524" x2="337" y2="524"/>
+              <line x1="178" y1="542" x2="333" y2="542"/><line x1="178" y1="560" x2="328" y2="560"/>
+              <line x1="178" y1="578" x2="322" y2="578"/>
+              <line x1="196" y1="465" x2="196" y2="588"/><line x1="215" y1="465" x2="215" y2="586"/>
+              <line x1="235" y1="465" x2="235" y2="584"/><line x1="255" y1="465" x2="255" y2="580"/>
+              <line x1="275" y1="465" x2="275" y2="578"/><line x1="295" y1="465" x2="295" y2="576"/>
+              <line x1="315" y1="465" x2="315" y2="574"/>
+              
+              <line x1="175" y1="596" x2="318" y2="596"/><line x1="173" y1="614" x2="314" y2="614"/>
+              <line x1="172" y1="632" x2="308" y2="632"/><line x1="172" y1="650" x2="302" y2="650"/>
+              <line x1="172" y1="668" x2="294" y2="668"/><line x1="172" y1="686" x2="286" y2="686"/>
+              <line x1="172" y1="704" x2="278" y2="704"/>
+              <line x1="191" y1="590" x2="191" y2="712"/><line x1="211" y1="588" x2="211" y2="710"/>
+              <line x1="231" y1="588" x2="231" y2="706"/><line x1="251" y1="588" x2="251" y2="703"/>
+              <line x1="271" y1="590" x2="271" y2="700"/><line x1="291" y1="592" x2="291" y2="696"/>
+              
+              <line x1="160" y1="722" x2="272" y2="722"/><line x1="158" y1="742" x2="270" y2="742"/>
+              <line x1="156" y1="762" x2="266" y2="762"/><line x1="155" y1="782" x2="262" y2="782"/>
+              <line x1="156" y1="802" x2="256" y2="802"/><line x1="158" y1="822" x2="248" y2="822"/>
+              <line x1="161" y1="842" x2="238" y2="842"/><line x1="164" y1="862" x2="226" y2="862"/>
+              <line x1="168" y1="882" x2="213" y2="882"/><line x1="172" y1="902" x2="202" y2="902"/>
+              <line x1="175" y1="922" x2="193" y2="922"/>
+              <line x1="178" y1="715" x2="178" y2="938"/><line x1="198" y1="716" x2="198" y2="928"/>
+              <line x1="218" y1="718" x2="218" y2="916"/><line x1="238" y1="720" x2="238" y2="868"/>
+              <line x1="256" y1="724" x2="256" y2="856"/>
+            </g>
+
+            <g stroke="#BEB09A" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none">
+              <path d="M 330,28 C 328,60 325,95 322,135 C 319,170 315,205 308,240 C 300,268 290,292 280,315"/>
+              <path d="M 280,315 C 255,318 228,328 205,345 C 182,362 165,382 155,408 C 148,432 150,458 162,478 C 170,490 180,498 188,502"/>
+              <path d="M 188,502 C 182,525 178,552 175,578 C 172,605 168,632 162,658 C 156,682 150,705 148,728 C 148,752 152,775 162,796 C 170,812 182,826 195,838"/>
+              <path d="M 280,315 C 278,340 278,365 278,390 C 278,415 280,438 282,458 C 282,478 282,498 280,520 C 278,545 274,570 268,595 C 262,620 255,645 248,668 C 241,692 235,715 230,740 C 225,762 220,785 215,808 C 210,832 205,858 200,882 C 195,905 190,928 183,950"/>
+              <path d="M 595,22 C 568,58 540,95 512,130 C 488,162 465,192 445,220 C 425,248 408,275 392,302 C 378,328 365,354 352,380"/>
+              <path d="M 392,302 C 418,310 445,316 472,318 C 498,318 525,314 550,308 C 575,302 598,292 618,278"/>
+              <path d="M 322,135 C 348,148 375,162 402,178 C 428,192 452,208 475,222 C 498,235 520,246 542,255 C 562,262 582,266 602,268"/>
+              <path d="M 280,315 C 305,320 332,326 358,334 C 380,340 402,348 422,358"/>
+              <path d="M 352,380 C 355,408 355,435 352,460 C 350,485 345,510 338,535 C 330,560 320,585 310,610 C 300,632 290,654 280,675 C 270,695 260,714 252,732"/>
+              <path d="M 278,390 C 268,415 258,442 252,470 C 246,496 242,522 240,548 C 238,572 238,598 240,622"/>
+              <path d="M 280,315 C 265,282 250,248 238,215 C 226,182 215,150 205,120 C 198,100 193,80 192,62"/>
+              <path d="M 252,732 C 255,755 258,778 262,800 C 265,818 268,835 268,850"/>
+            </g>
+
+            <g stroke="#FAF7F0" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+              <path d="M 330,28 C 328,60 325,95 322,135 C 319,170 315,205 308,240 C 300,268 290,292 280,315"/>
+              <path d="M 280,315 C 255,318 228,328 205,345 C 182,362 165,382 155,408 C 148,432 150,458 162,478 C 170,490 180,498 188,502"/>
+              <path d="M 188,502 C 182,525 178,552 175,578 C 172,605 168,632 162,658 C 156,682 150,705 148,728 C 148,752 152,775 162,796 C 170,812 182,826 195,838"/>
+              <path d="M 280,315 C 278,340 278,365 278,390 C 278,415 280,438 282,458 C 282,478 282,498 280,520 C 278,545 274,570 268,595 C 262,620 255,645 248,668 C 241,692 235,715 230,740 C 225,762 220,785 215,808 C 210,832 205,858 200,882 C 195,905 190,928 183,950"/>
+              <path d="M 595,22 C 568,58 540,95 512,130 C 488,162 465,192 445,220 C 425,248 408,275 392,302 C 378,328 365,354 352,380"/>
+              <path d="M 392,302 C 418,310 445,316 472,318 C 498,318 525,314 550,308 C 575,302 598,292 618,278"/>
+              <path d="M 322,135 C 348,148 375,162 402,178 C 428,192 452,208 475,222 C 498,235 520,246 542,255 C 562,262 582,266 602,268"/>
+              <path d="M 280,315 C 305,320 332,326 358,334 C 380,340 402,348 422,358"/>
+              <path d="M 352,380 C 355,408 355,435 352,460 C 350,485 345,510 338,535 C 330,560 320,585 310,610 C 300,632 290,654 280,675 C 270,695 260,714 252,732"/>
+              <path d="M 278,390 C 268,415 258,442 252,470 C 246,496 242,522 240,548 C 238,572 238,598 240,622"/>
+              <path d="M 280,315 C 265,282 250,248 238,215 C 226,182 215,150 205,120 C 198,100 193,80 192,62"/>
+              <path d="M 252,732 C 255,755 258,778 262,800 C 265,818 268,835 268,850"/>
+            </g>
+
+            <path d="M 330,28 C 328,60 325,95 322,135 C 319,170 315,205 308,240 C 300,268 290,292 280,315" stroke="#B5900C" stroke-width="8.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            
+            <path d="M 330,28 C 328,60 325,95 322,135 C 319,170 315,205 308,240 C 300,268 290,292 280,315" stroke="#EEC417" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            
+            <path d="M 595,22 C 568,58 540,95 512,130 C 488,162 465,192 445,220 C 425,248 408,275 392,302 C 378,328 365,354 352,380" stroke="#B5900C" stroke-width="8.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            
+            <path d="M 595,22 C 568,58 540,95 512,130 C 488,162 465,192 445,220 C 425,248 408,275 392,302 C 378,328 365,354 352,380" stroke="#EEC417" stroke-width="5.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            
+            <path d="M 280,315 C 255,318 228,328 205,345 C 182,362 165,382 155,408 C 148,432 150,458 162,478 C 170,490 180,498 188,502" stroke="#B5900C" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 4"/>
+            
+            <path d="M 280,315 C 255,318 228,328 205,345 C 182,362 165,382 155,408 C 148,432 150,458 162,478 C 170,490 180,498 188,502" stroke="#EEC417" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 4"/>
+
+            <g transform="translate(183, 385)">
+              <line x1="0" y1="-28" x2="0" y2="28" stroke="#4A6B8A" stroke-width="2.8"/>
+              <line x1="0" y1="-14" x2="-24" y2="20" stroke="#7099BB" stroke-width="1.2"/>
+              <line x1="0" y1="-14" x2="24" y2="20" stroke="#7099BB" stroke-width="1.2"/>
+              <line x1="0" y1="0" x2="-32" y2="26" stroke="#7099BB" stroke-width="1"/>
+              <line x1="0" y1="0" x2="32" y2="26" stroke="#7099BB" stroke-width="1"/>
+            </g>
+            <text x="72" y="375" fill="#4A6B8A" font-family="system-ui,sans-serif" font-size="7.5" font-weight="700">Sea Link Bridge</text>
+
+            <rect x="142" y="590" width="6" height="6" fill="#CC3333" rx="1"/>
+            <text x="138" y="588" text-anchor="end" font-family="system-ui,sans-serif" font-size="7" font-weight="700" fill="#1C1C1E">Haji Ali Dargha</text>
+            <rect x="118" y="728" width="6" height="6" fill="#CC3333" rx="1"/>
+            <text x="114" y="726" text-anchor="end" font-family="system-ui,sans-serif" font-size="6.5" font-weight="700" fill="#1C1C1E">Towers of Silence</text>
+            <rect x="256" y="760" width="7" height="7" fill="#0071E3" rx="1"/>
+            <text x="268" y="762" font-family="system-ui,sans-serif" font-size="7.5" font-weight="700" fill="#1C1C1E">Chhatrapati Shivaji Terminus</text>
+            <text x="268" y="772" font-family="system-ui,sans-serif" font-size="6.5" fill="#555">(Victoria Terminus)</text>
+            <circle cx="238" cy="805" r="3.5" fill="#FF9500"/>
+            <text x="246" y="803" font-family="system-ui,sans-serif" font-size="7" font-weight="700" fill="#1C1C1E">Hutatma Chowk</text>
+            <text x="246" y="812" font-family="system-ui,sans-serif" font-size="6.5" fill="#555">Flora Fountain</text>
+            <rect x="253" y="836" width="7" height="7" fill="#CC3333" rx="1.5"/>
+            <text x="264" y="843" font-family="system-ui,sans-serif" font-size="8" font-weight="800" fill="#CC3333">Gateway of India</text>
+            
+            <ellipse cx="502" cy="675" rx="15" ry="9" fill="#E8DFC8" stroke="#C5B89A" stroke-width="1.2"/>
+            <text x="502" y="690" text-anchor="middle" font-family="system-ui,sans-serif" font-size="6.5" fill="#666">Butcher Island</text>
+            <ellipse cx="615" cy="702" rx="29" ry="17" fill="#E8DFC8" stroke="#C5B89A" stroke-width="1.2"/>
+            <rect x="606" y="690" width="6" height="6" fill="#CC3333" rx="1"/>
+            <text x="615" y="690" text-anchor="middle" font-family="system-ui,sans-serif" font-size="6.5" font-weight="700" fill="#CC3333">Elephanta Caves</text>
+            <text x="615" y="718" text-anchor="middle" font-family="system-ui,sans-serif" font-size="6.5" fill="#666">Elephanta Island</text>
+            <ellipse cx="693" cy="752" rx="26" ry="15" fill="#D5C9A5" stroke="#C5B89A" stroke-width="1"/>
+            <text x="693" y="756" text-anchor="middle" font-family="system-ui,sans-serif" font-size="7.5" fill="#555" font-weight="700">Shewa</text>
+            
+            <text x="316" y="76" font-family="system-ui,sans-serif" font-size="6.5" fill="#7A6A50" font-style="italic" font-weight="600">Western Hwy</text>
+            <text x="522" y="158" font-family="system-ui,sans-serif" font-size="6.5" fill="#7A6A50" font-style="italic" font-weight="600">Eastern Hwy</text>
+
+            <g id="svgLayerHeatmap" stroke-linecap="round" stroke-linejoin="round" fill="none">
+              
+              <path d="M 330,28 C 328,60 325,95 322,135" stroke="#1AAD5E" stroke-width="4.5"/>
+              <path d="M 280,315 C 255,318 228,328 205,345 C 182,362 165,382 155,408 C 148,432 150,458 162,478 C 170,490 180,498 188,502" stroke="#1AAD5E" stroke-width="4.5" stroke-dasharray="8 4"/>
+              <path d="M 148,728 C 148,752 152,775 162,796 C 170,812 182,826 195,838" stroke="#1AAD5E" stroke-width="4.5"/>
+              <path d="M 595,22 C 568,58 540,95 512,130 C 488,162 465,192 445,220" stroke="#1AAD5E" stroke-width="4.5"/>
+              <path d="M 352,380 C 355,408 355,435 352,460 C 350,485 345,510 338,535 C 330,560 320,585 310,610" stroke="#1AAD5E" stroke-width="4.5"/>
+              <path d="M 280,315 C 305,320 332,326 358,334 C 380,340 402,348 422,358" stroke="#1AAD5E" stroke-width="4.5"/>
+              <path d="M 215,808 C 210,832 205,858 200,882 C 195,905 190,928 183,950" stroke="#1AAD5E" stroke-width="4.5"/>
+              <path d="M 452,208 C 475,222 498,235 520,246 C 542,255 562,262 602,268" stroke="#1AAD5E" stroke-width="4.5"/>
+              <path d="M 392,302 C 418,310 445,316 472,318 C 498,318 525,314 550,308 C 575,302 598,292 618,278" stroke="#1AAD5E" stroke-width="4.5"/>
+              
+              <path d="M 322,135 C 319,170 315,205 308,240 C 300,268 290,292 280,315" stroke="#E8B500" stroke-width="4.5"/>
+              <path d="M 445,220 C 425,248 408,275 392,302 C 378,328 365,354 352,380" stroke="#E8B500" stroke-width="4.5"/>
+              <path d="M 282,458 C 282,478 282,498 280,520 C 278,545 274,570 268,595" stroke="#E8B500" stroke-width="4.5"/>
+              <path d="M 322,135 C 348,148 375,162 402,178 C 428,192 452,208" stroke="#E8B500" stroke-width="4.5"/>
+              
+              <path d="M 280,315 C 278,340 278,365 278,390" stroke="#D94A38" stroke-width="5.5"/>
+              <circle cx="278" cy="357" r="15" fill="rgba(217,74,56,0.18)"/>
+              <text x="278" y="354" text-anchor="middle" font-family="system-ui,sans-serif" font-size="7" font-weight="700" fill="#D94A38">Mahim Jam</text>
+              <path d="M 175,578 C 172,605 168,632 162,658" stroke="#D94A38" stroke-width="5.5"/>
+              <circle cx="168" cy="616" r="12" fill="rgba(217,74,56,0.15)"/>
+              <path d="M 278,390 C 268,415 258,442 252,470 C 246,496 242,522 240,548" stroke="#D94A38" stroke-width="4.5"/>
+            </g>
+
+            <g id="svgLayerSignals">
+              
+              <g class="traffic-signal-node" id="sigNode1" transform="translate(275, 303)" onclick="openInspector('Signal #101: Bandra Kalanagar', 'WEH junction. Automated preemption engaged.')">
+                <rect class="sig-box" x="0" y="0" width="9" height="22" rx="3" fill="#1C1C1E" stroke="#3A3A3C" stroke-width="0.8"/>
+                <circle id="sig1Red" cx="4.5" cy="4" r="2.2" class="sig-lens active-red" fill="#FF3B30"/>
+                <circle id="sig1Amber" cx="4.5" cy="11" r="2.2" class="sig-lens" fill="#FF9500"/>
+                <circle id="sig1Green" cx="4.5" cy="18" r="2.2" class="sig-lens" fill="#34C759"/>
+                <text id="sig1Label" x="12" y="14" class="sig-label-pill" fill="#FF3B30">RED</text>
+              </g>
+              
+              <g class="traffic-signal-node" id="sigNode2" transform="translate(273, 348)" onclick="openInspector('Signal #102: Mahim Causeway', 'High-density Mahim chokepoint preemption signal.')">
+                <rect class="sig-box" x="0" y="0" width="9" height="22" rx="3" fill="#1C1C1E" stroke="#3A3A3C" stroke-width="0.8"/>
+                <circle id="sig2Red" cx="4.5" cy="4" r="2.2" class="sig-lens active-red" fill="#FF3B30"/>
+                <circle id="sig2Amber" cx="4.5" cy="11" r="2.2" class="sig-lens" fill="#FF9500"/>
+                <circle id="sig2Green" cx="4.5" cy="18" r="2.2" class="sig-lens" fill="#34C759"/>
+                <text id="sig2Label" x="12" y="14" class="sig-label-pill" fill="#FF3B30">RED</text>
+              </g>
+              
+              <g class="traffic-signal-node" id="sigNode3" transform="translate(276, 446)" onclick="openInspector('Signal #103: Dadar TT Circle', 'Central corridor preemption controller.')">
+                <rect class="sig-box" x="0" y="0" width="9" height="22" rx="3" fill="#1C1C1E" stroke="#3A3A3C" stroke-width="0.8"/>
+                <circle id="sig3Red" cx="4.5" cy="4" r="2.2" class="sig-lens active-red" fill="#FF3B30"/>
+                <circle id="sig3Amber" cx="4.5" cy="11" r="2.2" class="sig-lens" fill="#FF9500"/>
+                <circle id="sig3Green" cx="4.5" cy="18" r="2.2" class="sig-lens" fill="#34C759"/>
+                <text id="sig3Label" x="12" y="14" class="sig-label-pill" fill="#FF3B30">RED</text>
+              </g>
+              
+              <g class="traffic-signal-node" id="sigNode4" transform="translate(183, 490)" onclick="openInspector('Signal #104: Worli Sea Face Toll Exit', 'Sea Link coastal highway connector signal.')">
+                <rect class="sig-box" x="0" y="0" width="9" height="22" rx="3" fill="#1C1C1E" stroke="#3A3A3C" stroke-width="0.8"/>
+                <circle id="sig4Red" cx="4.5" cy="4" r="2.2" class="sig-lens active-red" fill="#FF3B30"/>
+                <circle id="sig4Amber" cx="4.5" cy="11" r="2.2" class="sig-lens" fill="#FF9500"/>
+                <circle id="sig4Green" cx="4.5" cy="18" r="2.2" class="sig-lens" fill="#34C759"/>
+                <text id="sig4Label" x="12" y="14" class="sig-label-pill" fill="#FF3B30">RED</text>
+              </g>
+              
+              <g class="traffic-signal-node" id="sigNode5" transform="translate(163, 606)" onclick="openInspector('Signal #105: Haji Ali Junction', 'Arterial coastal intersection.')">
+                <rect class="sig-box" x="0" y="0" width="9" height="22" rx="3" fill="#1C1C1E" stroke="#3A3A3C" stroke-width="0.8"/>
+                <circle id="sig5Red" cx="4.5" cy="4" r="2.2" class="sig-lens active-red" fill="#FF3B30"/>
+                <circle id="sig5Amber" cx="4.5" cy="11" r="2.2" class="sig-lens" fill="#FF9500"/>
+                <circle id="sig5Green" cx="4.5" cy="18" r="2.2" class="sig-lens" fill="#34C759"/>
+                <text id="sig5Label" x="12" y="14" class="sig-label-pill" fill="#FF3B30">RED</text>
+              </g>
+              
+              <g class="traffic-signal-node" id="sigNode6" transform="translate(305, 598)" onclick="openInspector('Signal #106: Byculla Fire Route', 'Eastern corridor commercial crossing.')">
+                <rect class="sig-box" x="0" y="0" width="9" height="22" rx="3" fill="#1C1C1E" stroke="#3A3A3C" stroke-width="0.8"/>
+                <circle id="sig6Red" cx="4.5" cy="4" r="2.2" class="sig-lens active-red" fill="#FF3B30"/>
+                <circle id="sig6Amber" cx="4.5" cy="11" r="2.2" class="sig-lens" fill="#FF9500"/>
+                <circle id="sig6Green" cx="4.5" cy="18" r="2.2" class="sig-lens" fill="#34C759"/>
+                <text id="sig6Label" x="12" y="14" class="sig-label-pill" fill="#FF3B30">RED</text>
+              </g>
+            </g>
+
+            <g id="svgLayerRoute">
+              
+              <path id="svgRouteBase" d="M 330,28 C 328,60 325,95 322,135 C 319,170 315,205 308,240 C 300,268 290,292 280,315 C 278,340 278,365 278,390 C 278,415 280,438 282,458 C 290,462 305,468 318,472"
+                    fill="none" stroke="#0071E3" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.35"/>
+              
+              <path id="svgRouteCompleted" d="M 330,28 C 328,60 325,95 322,135 C 319,170 315,205 308,240 C 300,268 290,292 280,315 C 278,340 278,365 278,390 C 278,415 280,438 282,458 C 290,462 305,468 318,472"
+                    fill="none" stroke="#34C759" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+              
+              <path d="M 280,315 C 255,318 228,328 205,345 C 182,362 165,382 155,408 C 148,432 150,458 162,478 C 170,490 180,498 188,502 C 182,525 178,552 175,578 C 172,605 168,632 162,658 C 156,682 150,705 148,728 C 148,752 152,775 162,796 C 170,812 182,826 195,838"
+                    fill="none" stroke="#0071E3" stroke-width="2.5" stroke-dasharray="4 4" opacity="0.4"/>
+              <path d="M 595,22 C 568,58 540,95 512,130 C 488,162 465,192 445,220 C 425,248 408,275 392,302 C 378,328 365,354 352,380 C 355,408 355,435 352,460 C 350,485 345,510 338,535 C 330,560 320,585 310,610"
+                    fill="none" stroke="#D32F2F" stroke-width="2.5" stroke-dasharray="4 4" opacity="0.4"/>
+              <path d="M 280,315 C 265,282 250,248 238,215 C 226,182 215,150 205,120 C 198,100 193,80 192,62"
+                    fill="none" stroke="#2E7D32" stroke-width="2.5" stroke-dasharray="4 4" opacity="0.4"/>
+
+              <g id="dynamicAmbulancePuck" transform="translate(330, 28)" style="cursor: pointer;" onclick="selectMissionByName('ambulance', event)">
+                <circle cx="0" cy="0" r="18" fill="rgba(52, 199, 89, 0.22)" class="dynamic-radar-pulse"/>
+                <rect x="-10" y="-7" width="20" height="14" rx="4" fill="#FFFFFF" stroke="#0071E3" stroke-width="2"/>
+                <path d="M -3,-1 L -1,-1 L -1,-3 L 1,-3 L 1,-1 L 3,-1 L 3,1 L 1,1 L 1,3 L -1,3 L -1,1 L -3,1 Z" fill="#FF3B30"/>
+                <circle cx="0" cy="-7" r="2.5" fill="#0071E3" class="police-strobe-lens"/>
+                <g transform="translate(13, -10)">
+                  <rect x="0" y="0" width="112" height="20" rx="6" fill="rgba(255,255,255,0.96)" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>
+                  <text x="8" y="14" font-family="system-ui, sans-serif" font-size="10" font-weight="700" fill="#1D1D1F">🚑 108 Ambulance A-12</text>
+                </g>
+              </g>
+
+              <g id="dynamicPolicePuck" transform="translate(280, 315)" style="cursor: pointer;" onclick="selectMissionByName('police', event)">
+                <circle cx="0" cy="0" r="14" fill="rgba(0, 113, 227, 0.2)"/>
+                <rect x="-9" y="-6" width="18" height="12" rx="3.5" fill="#1C3B70" stroke="#FFFFFF" stroke-width="1.8"/>
+                <circle cx="-3" cy="-6" r="2" fill="#0071E3" class="police-strobe-lens"/>
+                <circle cx="3" cy="-6" r="2" fill="#FF3B30" class="police-strobe-lens"/>
+                <g transform="translate(13, -9)">
+                  <rect x="0" y="0" width="108" height="18" rx="5" fill="rgba(255,255,255,0.96)" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>
+                  <text x="6" y="13" font-family="system-ui, sans-serif" font-size="9.5" font-weight="700" fill="#1C3B70">🚔 Police P-08 (Sea Link)</text>
+                </g>
+              </g>
+
+              <g id="dynamicFirePuck" transform="translate(445, 220)" style="cursor: pointer;" onclick="selectMissionByName('fire', event)">
+                <rect x="-12" y="-7" width="24" height="14" rx="4" fill="#D32F2F" stroke="#FFFFFF" stroke-width="1.8"/>
+                <circle cx="-4" cy="0" r="2.5" fill="#FFCC00"/>
+                <rect x="2" y="-3" width="6" height="6" rx="1" fill="#FFFFFF" opacity="0.8"/>
+                <circle cx="0" cy="-7" r="2.5" fill="#FF9500" class="fire-beacon-pulse"/>
+                <g transform="translate(15, -9)">
+                  <rect x="0" y="0" width="108" height="18" rx="5" fill="rgba(255,255,255,0.96)" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>
+                  <text x="6" y="13" font-family="system-ui, sans-serif" font-size="9.5" font-weight="700" fill="#D32F2F">🚒 Fire Tender F-03</text>
+                </g>
+              </g>
+
+              <g id="dynamicBikePuck" transform="translate(280, 315)" style="cursor: pointer;" onclick="selectMissionByName('bike', event)">
+                <ellipse cx="0" cy="0" rx="7" ry="4.5" fill="#34C759" stroke="#FFFFFF" stroke-width="1.5"/>
+                <circle cx="0" cy="0" r="2" fill="#FFFFFF"/>
+                <g transform="translate(11, -8)">
+                  <rect x="0" y="0" width="98" height="16" rx="4" fill="rgba(255,255,255,0.96)" stroke="rgba(0,0,0,0.1)" stroke-width="1"/>
+                  <text x="5" y="12" font-family="system-ui, sans-serif" font-size="9" font-weight="700" fill="#2E7D32">🏍️ Bike Medic M-02</text>
+                </g>
+              </g>
+
+              <g id="dynamicTrafficStream" opacity="0.92">
+                <g id="cityAuto1" transform="translate(322, 135)">
+                  <rect x="-5" y="-3" width="10" height="6" rx="1.5" fill="#1C1C1E"/>
+                  <rect x="-3" y="-5" width="6" height="3" rx="0.8" fill="#FFCC00"/>
+                </g>
+                <g id="cityAuto2" transform="translate(280, 315)">
+                  <rect x="-5" y="-3" width="10" height="6" rx="1.5" fill="#1C1C1E"/>
+                  <rect x="-3" y="-5" width="6" height="3" rx="0.8" fill="#FFCC00"/>
+                </g>
+                <g id="cityTaxi1" transform="translate(278, 390)">
+                  <rect x="-6" y="-3.5" width="12" height="7" rx="2" fill="#1C1C1E"/>
+                  <rect x="-4" y="-5.5" width="8" height="3" rx="1" fill="#FFCC00"/>
+                </g>
+              </g>
+            </g>
+
+            <g id="destPinHospital" transform="translate(318, 472)" style="cursor: pointer;" onclick="openInspector('KEM Hospital', 'Premier trauma center in Parel. Emergency bay cleared.')">
+              <circle cx="0" cy="0" r="10" fill="#34C759" stroke="#fff" stroke-width="2.5"/>
+              <text x="0" y="4" text-anchor="middle" font-family="system-ui, sans-serif" font-size="9" font-weight="800" fill="#fff">H</text>
+              <text x="13" y="4" font-family="system-ui, sans-serif" font-size="10" font-weight="700" fill="#1D1D1F">KEM Hospital</text>
+            </g>
+            <g id="destPinNariman" transform="translate(195, 838)" style="cursor: pointer;" onclick="openInspector('Nariman Point Hub', 'South coastal administrative terminus.')">
+              <circle cx="0" cy="0" r="9" fill="#0071E3" stroke="#fff" stroke-width="2"/>
+              <text x="12" y="3" font-family="system-ui, sans-serif" font-size="9" font-weight="700" fill="#1D1D1F">Nariman Point</text>
+            </g>
+            <g id="destPinMazagaon" transform="translate(310, 610)" style="cursor: pointer;" onclick="openInspector('Mazagaon Docks', 'Industrial fire emergency target zone.')">
+              <circle cx="0" cy="0" r="9" fill="#D32F2F" stroke="#fff" stroke-width="2"/>
+              <text x="12" y="3" font-family="system-ui, sans-serif" font-size="9" font-weight="700" fill="#1D1D1F">Mazagaon Docks</text>
+            </g>
+            <g id="destPinJuhu" transform="translate(192, 62)" style="cursor: pointer;" onclick="openInspector('Juhu Beach Trauma Center', 'Lifeguard coastal rescue outpost.')">
+              <circle cx="0" cy="0" r="9" fill="#2E7D32" stroke="#fff" stroke-width="2"/>
+              <text x="12" y="3" font-family="system-ui, sans-serif" font-size="9" font-weight="700" fill="#1D1D1F">Juhu Beach</text>
+            </g>
+            <g id="destPinLilavati" transform="translate(232, 305)" style="cursor: pointer;" onclick="openInspector('Lilavati Hospital', 'Multi-speciality medical center in Bandra West.')">
+              <circle cx="0" cy="0" r="8" fill="#34C759" stroke="#fff" stroke-width="2"/>
+              <text x="11" y="3" font-family="system-ui, sans-serif" font-size="8.5" font-weight="700" fill="#1D1D1F">Lilavati Hospital</text>
+            </g>
+            <g id="destPinHinduja" transform="translate(265, 420)" style="cursor: pointer;" onclick="openInspector('Hinduja Clinic', 'Emergency trauma care at Shivaji Park.')">
+              <circle cx="0" cy="0" r="8" fill="#FF9500" stroke="#fff" stroke-width="2"/>
+              <text x="11" y="3" font-family="system-ui, sans-serif" font-size="8.5" font-weight="700" fill="#1D1D1F">Hinduja Clinic</text>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="view-panel" id="view-operations">
+      <div class="hero-header">
+        <div class="hero-title-group">
+          <h1>Operations Dispatch</h1>
+          <p>Triage incident queue and trigger multi-agency coordination protocols.</p>
+        </div>
+        <button class="btn-accent" onclick="openDispatchModal()">
+          <i class="fa-solid fa-plus"></i> New Incident
+        </button>
+      </div>
+
+      <div class="clean-grid-3">
+        <div class="incident-clean-card">
+          <div class="card-top-row">
+            <div class="incident-title-box">
+              <h3>Collision Involving 3 Cars</h3>
+              <p>Central Expressway KM 14 · Left lane blocked</p>
+            </div>
+            <span class="badge-subtle badge-amber">Level 2</span>
+          </div>
+          <div class="card-bottom-row">
+            <span style="font-size: 13px; color: var(--text-secondary);">Police P-08 escorting</span>
+            <button class="action-icon-menu-btn" onclick="openInspector('Mission #2040 Details', 'Ambulance A-12 + Police P-08 escorting trauma patients.')">
+              Inspect
+            </button>
+          </div>
+        </div>
+
+        <div class="incident-clean-card">
+          <div class="card-top-row">
+            <div class="incident-title-box">
+              <h3>Commercial Building Fire</h3>
+              <p>Warehouse Sector B · F-03 on scene</p>
+            </div>
+            <span class="badge-subtle badge-red">Critical</span>
+          </div>
+          <div class="card-bottom-row">
+            <span style="font-size: 13px; color: var(--text-secondary);">Hydrants connected</span>
+            <button class="action-icon-menu-btn" onclick="openInspector('Fire Alert #902', 'Commercial warehouse fire. Secondary ladder unit F-09 standing by.')">
+              Inspect
+            </button>
+          </div>
+        </div>
+
+        <div class="incident-clean-card">
+          <div class="card-top-row">
+            <div class="incident-title-box">
+              <h3>Air Medevac Standby</h3>
+              <p>General Hospital Helipad</p>
+            </div>
+            <span class="badge-subtle badge-blue">Ready</span>
+          </div>
+          <div class="card-bottom-row">
+            <span style="font-size: 13px; color: var(--text-secondary);">Chopper MED-1</span>
+            <button class="action-icon-menu-btn" onclick="showToast('Air Ambulance', 'MED-1 flight clearance confirmed.')">
+              Authorize
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="view-panel" id="view-vehicles">
+      <div class="hero-header">
+        <div class="hero-title-group">
+          <h1>Vehicle Fleet</h1>
+          <p>Tap any vehicle card to inspect live telemetry and operational status.</p>
+        </div>
+      </div>
+
+      <div class="clean-grid-3">
+        <div class="incident-clean-card" onclick="openInspector('Ambulance A-12 Telemetry', 'Speed: 84 km/h · CAN-bus status: 100% · Driver: Evans · Route: Central Expressway')">
+          <div class="card-top-row">
+            <div class="incident-title-box">
+              <h3>Ambulance A-12</h3>
+              <p>Life Support · En Route</p>
+            </div>
+            <span class="badge-subtle badge-blue">Active</span>
+          </div>
+          <div class="card-bottom-row">
+            <span style="font-size: 13px; color: var(--text-secondary);">Speed: <strong class="mono">84 km/h</strong></span>
+            <span style="font-size: 12px; color: var(--accent-blue); font-weight: 500;">View Telemetry →</span>
+          </div>
+        </div>
+
+        <div class="incident-clean-card" onclick="openInspector('Fire Unit F-03 Telemetry', 'Speed: 68 km/h · Water Tank: 100% · Driver: Capt. Miller · Destination: Warehouse 9')">
+          <div class="card-top-row">
+            <div class="incident-title-box">
+              <h3>Fire Unit F-03</h3>
+              <p>Heavy Ladder · Responding</p>
+            </div>
+            <span class="badge-subtle badge-amber">Responding</span>
+          </div>
+          <div class="card-bottom-row">
+            <span style="font-size: 13px; color: var(--text-secondary);">Speed: <strong class="mono">68 km/h</strong></span>
+            <span style="font-size: 12px; color: var(--accent-blue); font-weight: 500;">View Telemetry →</span>
+          </div>
+        </div>
+
+        <div class="incident-clean-card" onclick="openInspector('Police P-08 Telemetry', 'Speed: 92 km/h · Escort Mode: Active · Driver: Chen · Lead Formation')">
+          <div class="card-top-row">
+            <div class="incident-title-box">
+              <h3>Police P-08</h3>
+              <p>Traffic Escort · In Formation</p>
+            </div>
+            <span class="badge-subtle badge-blue">Escort</span>
+          </div>
+          <div class="card-bottom-row">
+            <span style="font-size: 13px; color: var(--text-secondary);">Speed: <strong class="mono">92 km/h</strong></span>
+            <span style="font-size: 12px; color: var(--accent-blue); font-weight: 500;">View Telemetry →</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="view-panel" id="view-signals">
+      <div class="hero-header">
+        <div class="hero-title-group">
+          <h1>Traffic Signals</h1>
+          <p>Smart intersection controllers with one-tap emergency overrides.</p>
+        </div>
+        <button class="btn-accent" onclick="showToast('All Green', 'All 14 arterial intersections switched to green.')">
+          Override All Green
+        </button>
+      </div>
+
+      <div class="clean-grid-3">
+        <div class="incident-clean-card">
+          <div class="card-top-row">
+            <div class="incident-title-box">
+              <h3>Intersection #104</h3>
+              <p>Central Ave &amp; 5th Expressway</p>
+            </div>
+            <span style="font-size: 12px; color: var(--success); font-weight: 600;">Green Locked</span>
+          </div>
+          <div class="card-bottom-row">
+            <span style="font-size: 13px; color: var(--text-secondary);">Countdown: <strong class="mono">42s</strong></span>
+            <button class="action-icon-menu-btn" onclick="openSignalConfigModal('Intersection #104')">
+              Configure Cycle
+            </button>
+          </div>
+        </div>
+
+        <div class="incident-clean-card">
+          <div class="card-top-row">
+            <div class="incident-title-box">
+              <h3>Intersection #105</h3>
+              <p>Central Ave &amp; Broadway Blvd</p>
+            </div>
+            <span style="font-size: 12px; color: var(--text-secondary); font-weight: 600;">Standard Cycle</span>
+          </div>
+          <div class="card-bottom-row">
+            <span style="font-size: 13px; color: var(--text-secondary);">Countdown: <strong class="mono">18s</strong></span>
+            <button class="action-icon-menu-btn" onclick="showToast('Signal #105 Overridden', 'Turned green for approaching emergency unit.')">
+              Override Green
+            </button>
+          </div>
+        </div>
+
+        <div class="incident-clean-card">
+          <div class="card-top-row">
+            <div class="incident-title-box">
+              <h3>Intersection #208</h3>
+              <p>Industrial Ring &amp; North Terminal</p>
+            </div>
+            <span style="font-size: 12px; color: var(--text-secondary); font-weight: 600;">Standard Cycle</span>
+          </div>
+          <div class="card-bottom-row">
+            <span style="font-size: 13px; color: var(--text-secondary);">Countdown: <strong class="mono">04s</strong></span>
+            <button class="action-icon-menu-btn" onclick="showToast('Signal #208 Overridden', 'Turned green for approaching fire tender.')">
+              Override Green
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="view-panel" id="view-analytics">
+      <div class="hero-header">
+        <div class="hero-title-group">
+          <h1>Analytics &amp; Trends</h1>
+          <p>Clean empirical telemetry across city routes.</p>
+        </div>
+        <button class="action-icon-menu-btn" onclick="showToast('PDF Export', 'Compiling municipal safety audit report...')">
+          <i class="fa-solid fa-download"></i> Export PDF
+        </button>
+      </div>
+
+      <div class="clean-grid-3">
+        <div class="incident-clean-card">
+          <span class="kpi-label">Response Time Trend</span>
+          <div class="kpi-big-num mono">4.2 min</div>
+          <span class="kpi-caption" style="color: var(--success);">-18% vs target</span>
+          <div style="margin-top: 14px; height: 60px;">
+            <svg viewBox="0 0 200 50" width="100%" height="100%">
+              <path d="M 0,40 Q 50,30 100,35 T 200,10" fill="none" stroke="#0071E3" stroke-width="2.5" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="incident-clean-card">
+          <span class="kpi-label">Route Optimization</span>
+          <div class="kpi-big-num mono">96.4%</div>
+          <span class="kpi-caption">Optimal Flow</span>
+          <div style="margin-top: 14px; height: 60px; display: flex; align-items: center; justify-content: center;">
+            <span style="font-size: 13px; color: var(--text-secondary);">142 Intersections Preempted</span>
+          </div>
+        </div>
+
+        <div class="incident-clean-card">
+          <span class="kpi-label">Sector Congestion</span>
+          <div class="kpi-big-num mono">-22%</div>
+          <span class="kpi-caption" style="color: var(--success);">Low Delay</span>
+          <div style="margin-top: 14px; height: 60px; display: flex; align-items: center; justify-content: center;">
+            <span style="font-size: 13px; color: var(--text-secondary);">Arterial Corridors Clear</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <div class="slide-over-scrim" id="inspectorScrim" onclick="closeInspector()">
+    <div class="slide-over-panel" onclick="event.stopPropagation()">
+      <div class="slide-over-header">
+        <h3 style="font-size: 16px; font-weight: 600;" id="inspectorTitle">Inspector</h3>
+        <button class="round-action-btn" onclick="closeInspector()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="slide-over-body">
+        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.4;" id="inspectorDescription">
+          Detailed operational telemetry and sensor readouts.
+        </p>
+
+        <div class="inspector-section">
+          <span class="inspector-section-title">Telemetry Telematics</span>
+          <div class="telemetry-row">
+            <span style="color: var(--text-secondary);">GPS Coordinate</span>
+            <span class="mono">37.7749° N, 122.4194° W</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--text-secondary);">Network Latency</span>
+            <span class="mono" style="color: var(--success);">14ms (5G Mesh)</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--text-secondary);">CAN-Bus Diagnostic</span>
+            <span style="color: var(--success); font-weight: 500;">0 Faults Reported</span>
+          </div>
+          <div class="telemetry-row">
+            <span style="color: var(--text-secondary);">Traffic Signal Preempted</span>
+            <span class="mono">6 Signals Ahead Cleared</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="spotlight-modal-scrim" id="spotlightScrim" onclick="closeSpotlight()">
+    <div class="spotlight-card" onclick="event.stopPropagation()">
+      <div class="spotlight-input-row">
+        <i class="fa-solid fa-magnifying-glass" style="color: var(--text-tertiary);"></i>
+        <input type="text" id="spotlightInput" placeholder="Search vehicles, incidents, signals, routes..." autofocus>
+        <span class="spotlight-badge">ESC to close</span>
+      </div>
+      <ul class="spotlight-list">
+        <li class="spotlight-item" onclick="selectSpotlightItem('Ambulance A-12 (En Route)')">
+          <span>🚑 Ambulance A-12</span>
+          <span class="item-shortcut">Jump to Telemetry</span>
+        </li>
+        <li class="spotlight-item" onclick="selectSpotlightItem('Fire Unit F-03 (Responding)')">
+          <span>🚒 Fire Unit F-03</span>
+          <span class="item-shortcut">Jump to Telemetry</span>
+        </li>
+        <li class="spotlight-item" onclick="selectSpotlightItem('Intersection #104 (Central Ave)')">
+          <span>🚥 Intersection #104</span>
+          <span class="item-shortcut">Override Green Wave</span>
+        </li>
+        <li class="spotlight-item" onclick="navToTab('map', null); closeSpotlight();">
+          <span>🗺️ Open Map View</span>
+          <span class="item-shortcut">Tab 2</span>
+        </li>
+        <li class="spotlight-item" onclick="showToast('Export Initiated', 'Compiling municipal safety audit report...'); closeSpotlight();">
+          <span>📄 Export Certified Compliance PDF</span>
+          <span class="item-shortcut">Report</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="glass-popover" id="mainQuickPopover">
+    <button class="popover-item" onclick="showToast('Preemption Checked', 'All 14 signals calibrated.'); hidePopovers();">
+      <i class="fa-solid fa-wave-square"></i> Test Preemption Signals
+    </button>
+    <button class="popover-item" onclick="showToast('Export Started', 'Compiling daily audit report...'); hidePopovers();">
+      <i class="fa-solid fa-file-pdf"></i> Generate Daily Report
+    </button>
+  </div>
+
+  <div class="glass-popover" id="incidentActionPopover" onclick="event.stopPropagation()">
+    <div class="popover-header-title" id="incidentActionPopoverTitle">Incident Actions</div>
+    <button class="popover-item" onclick="triggerIncidentAction('Lock Green Wave');">
+      <i class="fa-solid fa-route" style="color: var(--success); width: 16px;"></i> Lock Green Wave
+    </button>
+    <button class="popover-item" onclick="triggerIncidentAction('Add Police Escort');">
+      <i class="fa-solid fa-shield" style="color: var(--accent-blue); width: 16px;"></i> Add Police Escort
+    </button>
+    <button class="popover-item" onclick="triggerIncidentAction('Request Air Support');">
+      <i class="fa-solid fa-helicopter" style="color: var(--warning); width: 16px;"></i> Request Air Support
+    </button>
+    <button class="popover-item danger-item" onclick="triggerIncidentAction('Broadcast Advisory');">
+      <i class="fa-solid fa-bullhorn" style="color: var(--danger); width: 16px;"></i> Broadcast Advisory
+    </button>
+  </div>
+
+  <div class="glass-popover" id="filterPopover">
+    <button class="popover-item" onclick="showToast('Filter Applied', 'Showing all incidents.'); hidePopovers();">Show All Incidents</button>
+    <button class="popover-item" onclick="showToast('Filter Applied', 'Showing critical level only.'); hidePopovers();">Critical Priority Only</button>
+    <button class="popover-item" onclick="showToast('Filter Applied', 'Showing medical trauma only.'); hidePopovers();">Medical Trauma</button>
+  </div>
+
+  <div class="glass-popover" id="mapLayersPopover">
+    <button class="popover-item" onclick="showToast('Layer Toggled', 'Standard cartography active.'); hidePopovers();">Standard Explore</button>
+    <button class="popover-item" onclick="showToast('Layer Toggled', 'Congestion heatmap active.'); hidePopovers();">Congestion Heatmap</button>
+    <button class="popover-item" onclick="showToast('Layer Toggled', 'Signal nodes visible.'); hidePopovers();">Traffic Signal Nodes</button>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <div class="spotlight-modal-scrim" id="dispatchModalScrim" onclick="closeDispatchModal()">
+    <div class="spotlight-card" style="max-width: 480px;" onclick="event.stopPropagation()">
+      <div class="slide-over-header">
+        <h3 style="font-size: 16px; font-weight: 600;">New Incident Dispatch</h3>
+        <button class="round-action-btn" onclick="closeDispatchModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div style="padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+        <div>
+          <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Incident Classification</label>
+          <select style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--separator); font-size: 13px; font-family: inherit;">
+            <option>Road Accident - Multiple Vehicles</option>
+            <option>Severe Cardiac Trauma Priority</option>
+            <option>Structural Commercial Fire</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Location</label>
+          <input type="text" value="Central Expressway KM 14 & 5th Avenue" style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--separator); font-size: 13px; font-family: inherit;">
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px;">
+          <button class="action-icon-menu-btn" onclick="closeDispatchModal()">Cancel</button>
+          <button class="btn-accent" onclick="closeDispatchModal(); showToast('Order Transmitted', 'Unit dispatched. Emergency green wave locked.');">Transmit Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+<script>
+    const domCache = new Map();
+    function getEl(id) {
+      let el = domCache.get(id);
+      if (!el) {
+        el = document.getElementById(id);
+        if (el) domCache.set(id, el);
+      }
+      return el;
+    }
+
+    function navToTab(tabName, clickedBtn) {
+      const views = document.querySelectorAll('.view-panel');
+      views.forEach(v => v.classList.remove('active-view'));
+
+      const target = document.getElementById(`view-${tabName}`);
+      if (target) {
+        target.classList.add('active-view');
+      }
+
+      const tabs = document.querySelectorAll('.segment-tab');
+      tabs.forEach(t => {
+        if (t.getAttribute('data-tab') === tabName) {
+          t.classList.add('active');
+        } else {
+          t.classList.remove('active');
+        }
+      });
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function showToast(title, message) {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+
+      const pill = document.createElement('div');
+      pill.className = 'toast-pill';
+      pill.innerHTML = `
+        <i class="fa-solid fa-circle-check" style="color: var(--accent-blue); font-size: 14px;"></i>
+        <span><strong>${title}</strong> · ${message}</span>
+      `;
+
+      container.appendChild(pill);
+
+      setTimeout(() => {
+        pill.style.opacity = '0';
+        pill.style.transform = 'translateY(-10px)';
+        pill.style.transition = 'all 0.2s ease';
+        setTimeout(() => pill.remove(), 200);
+      }, 3500);
+    }
+
+    function openInspector(title, description) {
+      const scrim = document.getElementById('inspectorScrim');
+      const titleEl = document.getElementById('inspectorTitle');
+      const descEl = document.getElementById('inspectorDescription');
+
+      if (titleEl) titleEl.textContent = title;
+      if (descEl) descEl.textContent = description;
+      if (scrim) scrim.classList.add('visible');
+    }
+
+    function closeInspector() {
+      const scrim = document.getElementById('inspectorScrim');
+      if (scrim) scrim.classList.remove('visible');
+    }
+
+    function openSpotlight() {
+      const scrim = document.getElementById('spotlightScrim');
+      if (scrim) {
+        scrim.classList.add('visible');
+        const input = document.getElementById('spotlightInput');
+        if (input) input.focus();
+      }
+    }
+
+    function closeSpotlight() {
+      const scrim = document.getElementById('spotlightScrim');
+      if (scrim) scrim.classList.remove('visible');
+    }
+
+    function selectSpotlightItem(itemName) {
+      closeSpotlight();
+      openInspector(itemName, `Telemetry and real-time operational status for ${itemName}.`);
+    }
+
+    const mapLayersState = {
+      heatmap: true,
+      signals: true,
+      route: true
+    };
+
+    function toggleLayersMenu(event) {
+      event.stopPropagation();
+      const menu = document.getElementById('layersDropdownMenu');
+      if (menu) {
+        menu.classList.toggle('visible');
+      }
+    }
+
+    function toggleMapLayer(layerName) {
+      mapLayersState[layerName] = !mapLayersState[layerName];
+      const isVisible = mapLayersState[layerName];
+
+      const svgId = 'svgLayer' + layerName.charAt(0).toUpperCase() + layerName.slice(1);
+      const layerEl = document.getElementById(svgId);
+      if (layerEl) {
+        layerEl.style.display = isVisible ? '' : 'none';
+      }
+
+      const itemBtn = document.getElementById('layerItem' + layerName.charAt(0).toUpperCase() + layerName.slice(1));
+      if (itemBtn) {
+        itemBtn.classList.toggle('active', isVisible);
+      }
+
+      const labels = {
+        heatmap: 'Congestion Heatmap',
+        signals: 'Traffic Signals',
+        route: 'Emergency Corridor'
+      };
+
+      showToast('Layer Toggled', `${labels[layerName]} ${isVisible ? 'enabled' : 'hidden'}.`);
+    }
+
+    function toggleIncidentCardMenu(event, menuId) {
+      if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+      }
+      const targetMenu = document.getElementById(menuId);
+      const isAlreadyOpen = targetMenu && targetMenu.classList.contains('active');
+
+      document.querySelectorAll('.card-action-dropdown').forEach(d => d.classList.remove('active'));
+
+      if (targetMenu && !isAlreadyOpen) {
+        targetMenu.classList.add('active');
+      }
+    }
+
+    function triggerCardAction(actionName, unitName, missionId, event) {
+      if (event) {
+        event.stopPropagation();
+      }
+      
+      document.querySelectorAll('.card-action-dropdown').forEach(d => d.classList.remove('active'));
+
+      if (missionId) {
+        selectMissionByName(missionId, null, false);
+      }
+
+      showToast(actionName, `${actionName} command transmitted to ${unitName}.`);
+    }
+
+    window.addEventListener('click', () => {
+      document.querySelectorAll('.card-action-dropdown').forEach(d => d.classList.remove('active'));
+      const layersMenu = document.getElementById('layersDropdownMenu');
+      if (layersMenu) {
+        layersMenu.classList.remove('visible');
+      }
+    });
+
+    function openDispatchModal() {
+      const scrim = document.getElementById('dispatchModalScrim');
+      if (scrim) scrim.classList.add('visible');
+    }
+
+    function closeDispatchModal() {
+      const scrim = document.getElementById('dispatchModalScrim');
+      if (scrim) scrim.classList.remove('visible');
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        openSpotlight();
+      }
+      if (e.key === 'Escape') {
+        closeSpotlight();
+        closeInspector();
+        closeDispatchModal();
+        document.querySelectorAll('.card-action-dropdown').forEach(d => d.classList.remove('active'));
+        const layersMenu = document.getElementById('layersDropdownMenu');
+        if (layersMenu) layersMenu.classList.remove('visible');
+      }
+    });
+
+    const SIM_TOTAL_DURATION_MS = 120000; 
+    let simVirtualElapsed = 0;
+    let simLastTick = Date.now();
+    let simSpeedMultiplier = 1;          
+    let simHasArrived = false;
+    let currentMissionIndex = 0;
+    let arrivalSwitchTimeout = null;
+
+    const CITY_MISSIONS = [
+      {
+        id: 'ambulance_kem',
+        vehicleName: '108 Ambulance A-12',
+        unitLabel: 'Ambulance A-12',
+        unitType: 'Medical Trauma Unit',
+        incidentTitle: 'Critical Cardiac Emergency · BKC',
+        iconHtml: '<i class="fa-solid fa-truck-medical"></i>',
+        origin: 'Santacruz / Airport WEH',
+        destination: 'KEM Hospital (Parel)',
+        corridorName: 'WEH -> Bandra Kalanagar -> Mahim Causeway -> KEM Hospital',
+        totalDistanceKm: 2.8,
+        puckId: 'dynamicAmbulancePuck',
+        geomId: 'geom_weh_parel',
+        signals: [
+          { id: 1, x: 295, y: 305, name: 'Bandra Kalanagar' },
+          { id: 2, x: 288, y: 380, name: 'Mahim Causeway' },
+          { id: 3, x: 285, y: 470, name: 'Dadar TT Tilak Link' }
+        ],
+        getSpeedAndInstruction: function(progress, elapsed) {
+          if (progress >= 1.0) {
+            return { speed: 0, isCongested: false, instruction: 'Arrived at KEM Hospital Emergency Trauma Ward · Patient Handover' };
+          } else if (progress >= 0.35 && progress <= 0.62) {
+            const spd = Math.round(30 + Math.sin(elapsed / 600) * 3);
+            return { speed: spd, isCongested: true, instruction: 'Mahim Causeway: Navigating heavy traffic bottleneck · Siren engaged' };
+          } else if (progress > 0.62 && progress <= 0.82) {
+            const spd = Math.round(54 + Math.sin(elapsed / 800) * 4);
+            return { speed: spd, isCongested: false, instruction: 'Dadar TT Corridor: Preemption green wave clearing cross-traffic' };
+          } else if (progress > 0.82 && progress < 0.95) {
+            const spd = Math.round(76 + Math.sin(elapsed / 1000) * 3);
+            return { speed: spd, isCongested: false, instruction: 'Acharya Donde Marg: Approaching Parel Medical Hub' };
+          } else if (progress >= 0.95) {
+            const spd = Math.round(28 * (1 - (progress - 0.95) / 0.05));
+            return { speed: Math.max(12, spd), isCongested: false, instruction: 'Final approach into KEM Hospital Emergency Trauma Bay' };
+          } else {
+            const spd = Math.round(78 + Math.sin(elapsed / 1000) * 4);
+            return { speed: spd, isCongested: false, instruction: 'Western Express Highway: High-speed corridor locked · Signals held green' };
+          }
+        }
+      },
+      {
+        id: 'police_sealink',
+        vehicleName: 'Police Interceptor P-08',
+        unitLabel: 'Police P-08',
+        unitType: 'High-Speed Coastal Escort',
+        incidentTitle: 'Sea Link Express Escort · Priority Convoy',
+        iconHtml: '<i class="fa-solid fa-car-side"></i>',
+        origin: 'Bandra Reclamation',
+        destination: 'Nariman Point / Mantralaya',
+        corridorName: 'Sea Link -> Worli Sea Face -> Haji Ali -> Marine Drive',
+        totalDistanceKm: 4.6,
+        puckId: 'dynamicPolicePuck',
+        geomId: 'geom_sealink_nariman',
+        signals: [
+          { id: 4, x: 180, y: 500, name: 'Worli Sea Face Exit' },
+          { id: 5, x: 180, y: 620, name: 'Haji Ali Junction' }
+        ],
+        getSpeedAndInstruction: function(progress, elapsed) {
+          if (progress >= 1.0) {
+            return { speed: 0, isCongested: false, instruction: 'Arrived at Nariman Point Administrative Terminal' };
+          } else if (progress <= 0.46) {
+            const spd = Math.round(92 + Math.sin(elapsed / 1000) * 4);
+            return { speed: spd, isCongested: false, instruction: 'Bandra-Worli Sea Link: High-speed coastal bridge · Toll bypass active' };
+          } else if (progress > 0.46 && progress <= 0.68) {
+            const spd = Math.round(44 + Math.sin(elapsed / 600) * 3);
+            return { speed: spd, isCongested: true, instruction: 'Haji Ali Junction: Navigating moderate coastal delay · Escort clearance active' };
+          } else {
+            const spd = Math.round(80 + Math.sin(elapsed / 900) * 4);
+            return { speed: spd, isCongested: false, instruction: 'Marine Drive Crescent: Speed corridor clear · Priority green waves active' };
+          }
+        }
+      },
+      {
+        id: 'fire_mazagaon',
+        vehicleName: 'Fire Tender F-03',
+        unitLabel: 'Fire F-03',
+        unitType: 'Heavy Commercial Response',
+        incidentTitle: 'Commercial Fire Alert · Mazagaon Industrial Basin',
+        iconHtml: '<i class="fa-solid fa-fire-extinguisher"></i>',
+        origin: 'Kurla Fire Substation',
+        destination: 'Mazagaon Docks',
+        corridorName: 'Sion -> Wadala -> Eastern Freeway -> Mazagaon',
+        totalDistanceKm: 3.2,
+        puckId: 'dynamicFirePuck',
+        geomId: 'geom_eastern_mazagaon',
+        signals: [
+          { id: 6, x: 295, y: 620, name: 'Byculla Fire Route Crossing' }
+        ],
+        getSpeedAndInstruction: function(progress, elapsed) {
+          if (progress >= 1.0) {
+            return { speed: 0, isCongested: false, instruction: 'Arrived at Mazagaon Commercial Docks · Deploying 5000L Foam Cannon' };
+          } else if (progress <= 0.4) {
+            const spd = Math.round(52 + Math.sin(elapsed / 700) * 4);
+            return { speed: spd, isCongested: false, instruction: 'Eastern Express Highway: Heavy engine accelerating through Sion Circle' };
+          } else if (progress > 0.4 && progress <= 0.75) {
+            const spd = Math.round(72 + Math.sin(elapsed / 800) * 3);
+            return { speed: spd, isCongested: false, instruction: 'Eastern Freeway Corridor: Dual siren engaged · Commercial traffic preempted' };
+          } else {
+            const spd = Math.round(38 + Math.sin(elapsed / 500) * 3);
+            return { speed: spd, isCongested: true, instruction: 'Mazagaon Dockland Approach: Tight industrial turns · Hydrant route pre-cleared' };
+          }
+        }
+      },
+      {
+        id: 'bike_juhu',
+        vehicleName: '108 Bike Medic M-02',
+        unitLabel: 'Bike Medic M-02',
+        unitType: 'Rapid Coastal First Responder',
+        incidentTitle: 'Coastal Distress Alert · Juhu Beach',
+        iconHtml: '<i class="fa-solid fa-motorcycle"></i>',
+        origin: 'Bandra Trauma Center',
+        destination: 'Juhu Beach Trauma Center',
+        corridorName: 'Bandra -> Khar -> S.V. Road North -> Juhu Beach',
+        totalDistanceKm: 1.9,
+        puckId: 'dynamicBikePuck',
+        geomId: 'geom_bandra_juhu',
+        signals: [
+          { id: 1, x: 295, y: 305, name: 'Bandra Kalanagar' }
+        ],
+        getSpeedAndInstruction: function(progress, elapsed) {
+          if (progress >= 1.0) {
+            return { speed: 0, isCongested: false, instruction: 'Arrived at Juhu Beach Lifeguard Post · Administering First Aid & Defibrillator' };
+          } else {
+            const spd = Math.round(62 + Math.sin(elapsed / 400) * 5);
+            return { speed: spd, isCongested: false, instruction: 'S.V. Road Coastal Arterial: Agile motorcycle splitting local lanes' };
+          }
+        }
+      },
+      {
+        id: 'ambulance_lilavati',
+        vehicleName: '108 Ambulance A-07',
+        unitLabel: 'Ambulance A-07',
+        unitType: 'Advanced Trauma Support',
+        incidentTitle: 'Critical Trauma Transfer · Santacruz Junction',
+        iconHtml: '<i class="fa-solid fa-truck-medical"></i>',
+        origin: 'Santacruz WEH',
+        destination: 'Lilavati Hospital (Bandra)',
+        corridorName: 'WEH -> Bandra Kalanagar -> Bandra West -> Lilavati',
+        totalDistanceKm: 2.1,
+        puckId: 'dynamicAmbulancePuck',
+        geomId: 'geom_weh_lilavati',
+        signals: [
+          { id: 1, x: 295, y: 305, name: 'Bandra Kalanagar' }
+        ],
+        getSpeedAndInstruction: function(progress, elapsed) {
+          if (progress >= 1.0) {
+            return { speed: 0, isCongested: false, instruction: 'Arrived at Lilavati Hospital Emergency Entrance' };
+          } else {
+            const spd = Math.round(68 + Math.sin(elapsed / 600) * 4);
+            return { speed: spd, isCongested: false, instruction: 'Bandra West Coastal Link: High-speed medical transfer' };
+          }
+        }
+      },
+      {
+        id: 'police_colaba',
+        vehicleName: 'Police Interceptor P-14',
+        unitLabel: 'Police P-14',
+        unitType: 'Executive VIP Escort',
+        incidentTitle: 'Colaba Port Security Escort',
+        iconHtml: '<i class="fa-solid fa-car-side"></i>',
+        origin: 'Worli Sea Face',
+        destination: 'Colaba Administrative Terminus',
+        corridorName: 'Sea Face -> Haji Ali -> Marine Drive -> Colaba Point',
+        totalDistanceKm: 5.4,
+        puckId: 'dynamicPolicePuck',
+        geomId: 'geom_sealink_colaba',
+        signals: [
+          { id: 4, x: 180, y: 500, name: 'Worli Sea Face' },
+          { id: 5, x: 180, y: 620, name: 'Haji Ali' }
+        ],
+        getSpeedAndInstruction: function(progress, elapsed) {
+          if (progress >= 1.0) {
+            return { speed: 0, isCongested: false, instruction: 'Arrived at Colaba Administrative Terminus · Mission Complete' };
+          } else {
+            const spd = Math.round(75 + Math.sin(elapsed / 700) * 5);
+            return { speed: spd, isCongested: false, instruction: 'South Coastal Corridor: High-speed priority convoy escort' };
+          }
+        }
+      },
+      {
+        id: 'fire_dadar',
+        vehicleName: 'Fire Tender F-09',
+        unitLabel: 'Fire F-09',
+        unitType: 'Commercial Hazmat Response',
+        incidentTitle: 'Chemical Fire Alert · Wadala Terminal',
+        iconHtml: '<i class="fa-solid fa-fire-extinguisher"></i>',
+        origin: 'Wadala Fire Depot',
+        destination: 'Hinduja Clinic (Shivaji Park)',
+        corridorName: 'Wadala -> Acharya Donde Marg -> Shivaji Park',
+        totalDistanceKm: 2.3,
+        puckId: 'dynamicFirePuck',
+        geomId: 'geom_wadala_hinduja',
+        signals: [
+          { id: 3, x: 285, y: 470, name: 'Dadar TT Circle' }
+        ],
+        getSpeedAndInstruction: function(progress, elapsed) {
+          if (progress >= 1.0) {
+            return { speed: 0, isCongested: false, instruction: 'Arrived at Hinduja Clinic Trauma Zone' };
+          } else {
+            const spd = Math.round(58 + Math.sin(elapsed / 600) * 4);
+            return { speed: spd, isCongested: false, instruction: 'Acharya Donde Link: Emergency vehicle clearing central intersections' };
+          }
+        }
+      },
+      {
+        id: 'ambulance_central',
+        vehicleName: '108 Ambulance A-22',
+        unitLabel: 'Ambulance A-22',
+        unitType: 'Cardiac Intensive Unit',
+        incidentTitle: 'Cardiac Arrest on Train · Central Station',
+        iconHtml: '<i class="fa-solid fa-truck-medical"></i>',
+        origin: 'Wadala Medical Outpost',
+        destination: 'Central Station',
+        corridorName: 'Eastern Freeway -> Byculla -> Central Station',
+        totalDistanceKm: 3.1,
+        puckId: 'dynamicAmbulancePuck',
+        geomId: 'geom_eastern_central',
+        signals: [
+          { id: 6, x: 295, y: 620, name: 'Byculla Fire Route Crossing' }
+        ],
+        getSpeedAndInstruction: function(progress, elapsed) {
+          if (progress >= 1.0) {
+            return { speed: 0, isCongested: false, instruction: 'Arrived at Central Station Emergency Platform Gate' };
+          } else {
+            const spd = Math.round(64 + Math.sin(elapsed / 800) * 4);
+            return { speed: spd, isCongested: false, instruction: 'Byculla Link: Critical cardiac preemption active' };
+          }
+        }
+      }
+    ];
+
+    const BG_GEOMS = {
+      dynamicAmbulancePuck: 'geom_weh_parel',
+      dynamicPolicePuck: 'geom_sealink_nariman',
+      dynamicFirePuck: 'geom_eastern_mazagaon',
+      dynamicBikePuck: 'geom_bandra_juhu'
+    };
+
+    function updateTrafficSignalState(sigId, state) {
+      const redEl = getEl('sig' + sigId + 'Red');
+      const greenEl = getEl('sig' + sigId + 'Green');
+      const labelEl = getEl('sig' + sigId + 'Label');
+
+      if (!redEl || !greenEl || !labelEl) return;
+
+      if (state === 'GREEN') {
+        greenEl.classList.add('active-green');
+        redEl.classList.remove('active-red');
+        labelEl.textContent = 'GREEN';
+        labelEl.setAttribute('fill', '#34C759');
+      } else {
+        redEl.classList.add('active-red');
+        greenEl.classList.remove('active-green');
+        labelEl.textContent = 'RED';
+        labelEl.setAttribute('fill', '#FF3B30');
+      }
+    }
+
+    function activateMission(index, isAutoRandom = false) {
+      if (arrivalSwitchTimeout) {
+        clearTimeout(arrivalSwitchTimeout);
+        arrivalSwitchTimeout = null;
+      }
+
+      currentMissionIndex = (index + CITY_MISSIONS.length) % CITY_MISSIONS.length;
+      const m = CITY_MISSIONS[currentMissionIndex];
+
+      simVirtualElapsed = 0;
+      simLastTick = Date.now();
+      simHasArrived = false;
+
+      const leadIcon = document.getElementById('navLeadIcon');
+      if (leadIcon) leadIcon.innerHTML = m.iconHtml;
+
+      const titleEl = document.getElementById('dynamicVehicleTitle');
+      if (titleEl) {
+        titleEl.innerHTML = `<span class="live-dot-pulse"></span> ${m.vehicleName} · Priority Mission`;
+      }
+
+      const badgeEl = document.getElementById('activeMissionBadge');
+      if (badgeEl) {
+        badgeEl.textContent = `Automated Mission #${currentMissionIndex + 1}`;
+      }
+
+      const countdownEl = document.getElementById('dynamicCountdownText');
+      if (countdownEl) countdownEl.textContent = '2:00';
+
+      const etaBadge = document.getElementById('dynamicEtaBadge');
+      if (etaBadge) {
+        etaBadge.style.background = 'rgba(52, 199, 89, 0.12)';
+      }
+
+      const distEl = document.getElementById('dynamicDistanceText');
+      if (distEl) distEl.textContent = `${m.totalDistanceKm} km to ${m.destination}`;
+
+      const masterPathEl = document.getElementById(m.geomId);
+      const basePathEl = document.getElementById('svgRouteBase');
+      const completedPathEl = document.getElementById('svgRouteCompleted');
+
+      if (masterPathEl && basePathEl) {
+        const dStr = masterPathEl.getAttribute('d');
+        basePathEl.setAttribute('d', dStr);
+        if (completedPathEl) {
+          completedPathEl.setAttribute('d', dStr);
+          const totalLen = masterPathEl.getTotalLength();
+          completedPathEl.style.strokeDasharray = totalLen;
+          completedPathEl.style.strokeDashoffset = totalLen;
+        }
+      }
+
+      for (let s = 1; s <= 6; s++) {
+        updateTrafficSignalState(s, 'RED');
+      }
+
+      if (isAutoRandom) {
+        showToast('Automated Dispatch', `Next Emergency Active: ${m.vehicleName} en route to ${m.destination}.`);
+      }
+    }
+
+    function dispatchNextRandomMission() {
+      let nextIndex = currentMissionIndex;
+      for (let i = 0; i < 10; i++) {
+        const candidate = Math.floor(Math.random() * CITY_MISSIONS.length);
+        if (candidate !== currentMissionIndex) {
+          nextIndex = candidate;
+          break;
+        }
+      }
+      activateMission(nextIndex, true);
+    }
+
+    function selectMissionByName(nameOrId, event, shouldNavToMap = true) {
+      if (event) event.stopPropagation();
+      const idx = CITY_MISSIONS.findIndex(m => m.id === nameOrId || m.vehicleName.toLowerCase().includes(nameOrId.toLowerCase()));
+      if (idx !== -1) {
+        activateMission(idx, false);
+        if (shouldNavToMap) {
+          navToTab('map', null);
+        }
+        showToast('Tracking Unit', `Now actively monitoring ${CITY_MISSIONS[idx].vehicleName} on map.`);
+      }
+    }
+
+    function restartCurrentMission() {
+      activateMission(currentMissionIndex, false);
+      showToast('Mission Replayed', `Timer reset to 2:00 for ${CITY_MISSIONS[currentMissionIndex].vehicleName}.`);
+    }
+
+    function onMissionDestinationReached() {
+      const m = CITY_MISSIONS[currentMissionIndex];
+      showToast('Destination Reached', `${m.vehicleName} arrived at ${m.destination}. Dispatched next unit in 2.5s.`);
+
+      const etaBadge = document.getElementById('dynamicEtaBadge');
+      if (etaBadge) {
+        etaBadge.style.background = 'rgba(52, 199, 89, 0.28)';
+      }
+
+      arrivalSwitchTimeout = setTimeout(() => {
+        dispatchNextRandomMission();
+      }, 2500);
+    }
+
+    function stepCitySimulation() {
+      const now = Date.now();
+      const dt = now - simLastTick;
+      simLastTick = now;
+
+      if (!simHasArrived) {
+        simVirtualElapsed += dt * simSpeedMultiplier;
+        if (simVirtualElapsed >= SIM_TOTAL_DURATION_MS) {
+          simVirtualElapsed = SIM_TOTAL_DURATION_MS;
+          simHasArrived = true;
+          onMissionDestinationReached();
+        }
+      }
+
+      const activeMission = CITY_MISSIONS[currentMissionIndex];
+      const progress = Math.min(1.0, simVirtualElapsed / SIM_TOTAL_DURATION_MS);
+
+      const remainingMs = Math.max(0, SIM_TOTAL_DURATION_MS - simVirtualElapsed);
+      const totalRemainingSecs = Math.ceil(remainingMs / 1000);
+      const remMins = Math.floor(totalRemainingSecs / 60);
+      const remSecs = totalRemainingSecs % 60;
+      const remSecsFormatted = remSecs < 10 ? '0' + remSecs : remSecs;
+
+      const countdownEl = document.getElementById('dynamicCountdownText');
+      if (countdownEl) {
+        countdownEl.textContent = simHasArrived ? '0:00' : `${remMins}:${remSecsFormatted}`;
+      }
+
+      const distEl = document.getElementById('dynamicDistanceText');
+      if (distEl) {
+        if (simHasArrived) {
+          distEl.textContent = `0.0 km · At ${activeMission.destination}`;
+        } else {
+          const remKm = (activeMission.totalDistanceKm * (1 - progress)).toFixed(2);
+          distEl.textContent = `${remKm} km to ${activeMission.destination}`;
+        }
+      }
+
+      const masterPathEl = document.getElementById(activeMission.geomId);
+      let curPt = { x: 335, y: 30 };
+      if (masterPathEl) {
+        const totalLen = masterPathEl.getTotalLength();
+        curPt = masterPathEl.getPointAtLength(progress * totalLen);
+
+        const completedPathEl = document.getElementById('svgRouteCompleted');
+        if (completedPathEl) {
+          completedPathEl.style.strokeDasharray = totalLen;
+          completedPathEl.style.strokeDashoffset = totalLen * (1 - progress);
+        }
+      }
+
+      const activePuck = document.getElementById(activeMission.puckId);
+      if (activePuck) {
+        activePuck.setAttribute('transform', `translate(${curPt.x.toFixed(1)}, ${curPt.y.toFixed(1)})`);
+      }
+
+      const puckIds = ['dynamicAmbulancePuck', 'dynamicPolicePuck', 'dynamicFirePuck', 'dynamicBikePuck'];
+      puckIds.forEach((puckId, pIdx) => {
+        if (puckId === activeMission.puckId) return;
+
+        const geomId = BG_GEOMS[puckId];
+        const pathEl = document.getElementById(geomId);
+        if (!pathEl) return;
+
+        const totalLen = pathEl.getTotalLength();
+        const phaseOffset = (pIdx + 1) * 31000;
+        const bgProgress = ((simVirtualElapsed * 0.85 + phaseOffset) % SIM_TOTAL_DURATION_MS) / SIM_TOTAL_DURATION_MS;
+        const pt = pathEl.getPointAtLength(bgProgress * totalLen);
+
+        const puckEl = document.getElementById(puckId);
+        if (puckEl) {
+          puckEl.setAttribute('transform', `translate(${pt.x.toFixed(1)}, ${pt.y.toFixed(1)})`);
+        }
+      });
+
+      const speedProfile = activeMission.getSpeedAndInstruction(progress, simVirtualElapsed);
+      const speedEl = document.getElementById('dynamicSpeed');
+      if (speedEl) {
+        if (simHasArrived) {
+          speedEl.textContent = '0 km/h · Arrived';
+          speedEl.style.color = 'var(--success)';
+          speedEl.style.background = 'rgba(52, 199, 89, 0.12)';
+        } else if (speedProfile.isCongested) {
+          speedEl.textContent = `${speedProfile.speed} km/h (Traffic Delay)`;
+          speedEl.style.color = 'var(--warning)';
+          speedEl.style.background = 'rgba(255, 149, 0, 0.14)';
+        } else {
+          speedEl.textContent = `${speedProfile.speed} km/h`;
+          speedEl.style.color = 'var(--text-secondary)';
+          speedEl.style.background = 'rgba(0,0,0,0.05)';
+        }
+      }
+
+      const instructionEl = document.getElementById('dynamicStreetInstruction');
+      if (instructionEl) {
+        instructionEl.textContent = speedProfile.instruction;
+      }
+
+      for (let s = 1; s <= 6; s++) {
+        let isPreempted = false;
+        if (activeMission.signals) {
+          const sig = activeMission.signals.find(item => item.id === s);
+          if (sig) {
+            const dx = sig.x - curPt.x;
+            const dy = sig.y - curPt.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            
+            if (dist < 75 && !simHasArrived) {
+              isPreempted = true;
+            }
+          }
+        }
+        updateTrafficSignalState(s, isPreempted ? 'GREEN' : 'RED');
+      }
+
+      const auto1 = document.getElementById('cityAuto1');
+      const pathSclr = document.getElementById('geom_transit_sclr');
+      if (auto1 && pathSclr) {
+        const len = pathSclr.getTotalLength();
+        const prg = ((simVirtualElapsed * 0.45) % 24000) / 24000;
+        const pt = pathSclr.getPointAtLength(prg * len);
+        auto1.setAttribute('transform', `translate(${pt.x.toFixed(1)}, ${pt.y.toFixed(1)})`);
+      }
+
+      const auto2 = document.getElementById('cityAuto2');
+      const pathBkc = document.getElementById('geom_transit_bkc');
+      if (auto2 && pathBkc) {
+        const len = pathBkc.getTotalLength();
+        const prg = ((simVirtualElapsed * 0.4) % 19000) / 19000;
+        const pt = pathBkc.getPointAtLength(prg * len);
+        auto2.setAttribute('transform', `translate(${pt.x.toFixed(1)}, ${pt.y.toFixed(1)})`);
+      }
+
+      const taxi1 = document.getElementById('cityTaxi1');
+      const pathSbapat = document.getElementById('geom_transit_sbapat');
+      if (taxi1 && pathSbapat) {
+        const len = pathSbapat.getTotalLength();
+        const prg = ((simVirtualElapsed * 0.35) % 22000) / 22000;
+        const pt = pathSbapat.getPointAtLength(prg * len);
+        taxi1.setAttribute('transform', `translate(${pt.x.toFixed(1)}, ${pt.y.toFixed(1)})`);
+      }
+
+      requestAnimationFrame(stepCitySimulation);
+    }
+
+    function toggleSimSpeed() {
+      if (simSpeedMultiplier === 1) {
+        simSpeedMultiplier = 4;
+      } else if (simSpeedMultiplier === 4) {
+        simSpeedMultiplier = 12;
+      } else {
+        simSpeedMultiplier = 1;
+      }
+      const label = document.getElementById('simSpeedLabel');
+      if (label) {
+        label.textContent = `${simSpeedMultiplier}x Speed`;
+      }
+      showToast('Simulation Speed', `Playback accelerated to ${simSpeedMultiplier}x.`);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      activateMission(0, false);
+      simLastTick = Date.now();
+      requestAnimationFrame(stepCitySimulation);
+    });
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      activateMission(0, false);
+      simLastTick = Date.now();
+      requestAnimationFrame(stepCitySimulation);
+    }</script>
+</body>
+</html>
